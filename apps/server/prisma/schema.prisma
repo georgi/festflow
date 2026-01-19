@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  WAITER
+  KITCHEN
+  BAR
+  ADMIN
+}
+
+enum StationType {
+  KITCHEN
+  BAR
+  OTHER
+}
+
+enum OrderStatus {
+  OPEN
+  DONE
+  CANCELED
+}
+
+enum OrderLineStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  role      Role
+  pinHash   String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[] @relation("UserOrders")
+}
+
+model Table {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Station {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  type      StationType
+  active    Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  menuItems  MenuItem[]
+  orderLines OrderLine[]
+}
+
+model MenuCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items MenuItem[]
+}
+
+model MenuItem {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  priceCents Int
+  soldOut    Boolean  @default(false)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  categoryId String
+  category   MenuCategory @relation(fields: [categoryId], references: [id])
+
+  stationId String
+  station   Station @relation(fields: [stationId], references: [id])
+
+  orderLines OrderLine[]
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  status         OrderStatus @default(OPEN)
+  canceledReason String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  tableId String
+  table   Table @relation(fields: [tableId], references: [id])
+
+  createdByName String
+  createdById   String?
+  createdBy     User? @relation("UserOrders", fields: [createdById], references: [id])
+
+  lines OrderLine[]
+
+  @@index([status, createdAt])
+  @@index([tableId, createdAt])
+}
+
+model OrderLine {
+  id        String          @id @default(cuid())
+  qty       Int
+  note      String?
+  status    OrderLineStatus @default(OPEN)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  stationId String
+  station   Station @relation(fields: [stationId], references: [id])
+
+  @@index([stationId, status, createdAt])
+  @@index([orderId])
+}

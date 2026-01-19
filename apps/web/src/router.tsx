@@ -3,13 +3,26 @@ import {
   createRoute,
   createRouter,
   Link,
+  redirect,
   Outlet
 } from "@tanstack/react-router";
 import { RoleBadgeHeader } from "./ui/RoleBadgeHeader";
 import { AdminPage } from "./views/AdminPage";
 import { BarPage } from "./views/BarPage";
 import { KitchenPage } from "./views/KitchenPage";
+import { LoginPage } from "./views/LoginPage";
 import { WaiterPage } from "./views/WaiterPage";
+
+async function requireRole(role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN", next: string) {
+  const res = await fetch("/api/auth/me", { headers: { Accept: "application/json" } });
+  if (!res.ok) {
+    throw redirect({ to: "/login", search: { next, role } });
+  }
+  const data = (await res.json()) as { user: { role: string } };
+  if (data.user.role !== role) {
+    throw redirect({ to: "/login", search: { next, role } });
+  }
+}
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -22,6 +35,9 @@ const rootRoute = createRootRoute({
 const waiterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/waiter",
+  beforeLoad: async ({ location }) => {
+    await requireRole("WAITER", location.pathname + location.search);
+  },
   component: () => (
     <>
       <RoleBadgeHeader role="Waiter" />
@@ -33,6 +49,9 @@ const waiterRoute = createRoute({
 const kitchenRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/kitchen",
+  beforeLoad: async ({ location }) => {
+    await requireRole("KITCHEN", location.pathname + location.search);
+  },
   component: () => (
     <>
       <RoleBadgeHeader role="Kitchen" />
@@ -44,6 +63,9 @@ const kitchenRoute = createRoute({
 const barRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/bar",
+  beforeLoad: async ({ location }) => {
+    await requireRole("BAR", location.pathname + location.search);
+  },
   component: () => (
     <>
       <RoleBadgeHeader role="Bar" />
@@ -55,12 +77,21 @@ const barRoute = createRoute({
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
+  beforeLoad: async ({ location }) => {
+    await requireRole("ADMIN", location.pathname + location.search);
+  },
   component: () => (
     <>
       <RoleBadgeHeader role="Admin" />
       <AdminPage />
     </>
   )
+});
+
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: () => <LoginPage />
 });
 
 const indexRoute = createRoute({
@@ -92,6 +123,7 @@ const indexRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  loginRoute,
   waiterRoute,
   kitchenRoute,
   barRoute,

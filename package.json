@@ -3,9 +3,9 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "scripts": {
+    "db:setup": "pnpm -C apps/server db:generate && pnpm -C apps/server db:migrate && pnpm -C apps/server db:seed",
     "dev": "pnpm -C apps/server dev",
     "build": "pnpm -C apps/web build && pnpm -C apps/server build",
     "start": "pnpm -C apps/server start"
   }
 }
-

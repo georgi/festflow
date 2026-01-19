@@ -6,9 +6,9 @@ Phase 0 – Principles
 	•	Everything must work offline inside the local network.
 	•	Every action must be reversible.
 
-Next.js is ideal because:
-	•	It gives routing, API, rendering, and bundling in one place.
-	•	Agents are extremely strong at CRUD apps, dashboards, tables, and realtime updates.
+Vite + React + TanStack Router + an Express server is ideal because:
+	•	It keeps the UI fast and simple (SPA) with a straightforward routing model.
+	•	The Node server can handle API + WebSockets reliably in one process.
 	•	It stays boring and predictable.
 
 ⸻
@@ -16,7 +16,8 @@ Next.js is ideal because:
 Phase 1 – Skeleton
 
 Goal: something people can open and click through.
-	•	Next.js app
+	•	Web app (Vite + React + TanStack Router)
+	•	Server app (Express)
 	•	Pages:
 	•	/waiter
 	•	/kitchen

@@ -3,16 +3,16 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { WebSocketServer } from "ws";
+import "dotenv/config";
+import { createApiRouter } from "./api/router";
+import { createRealtimeServer } from "./realtime";
 
 const app = express();
 app.disable("x-powered-by");
 
 const port = Number(process.env.PORT ?? "3000");
 
-app.get("/api/health", (_req, res) => {
-  res.json({ ok: true });
-});
+app.use(express.json({ limit: "1mb" }));
 
 const server = http.createServer(app);
 
@@ -28,13 +28,8 @@ server.on("error", (err) => {
   process.exit(1);
 });
 
-const wss = new WebSocketServer({ server, path: "/ws" });
-wss.on("connection", (socket) => {
-  socket.send(JSON.stringify({ type: "hello", ts: Date.now() }));
-  socket.on("message", (data) => {
-    socket.send(data.toString());
-  });
-});
+const realtime = createRealtimeServer(server);
+app.use("/api", createApiRouter({ broadcast: realtime.broadcast }));
 
 async function main() {
   const serverDir = path.dirname(fileURLToPath(import.meta.url));
@@ -71,8 +66,13 @@ async function main() {
     });
   }
 
+  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  });
+
   server.listen(port, "0.0.0.0", () => {
-    console.log(`FestFlow listening on http://0.0.0.0:${port}`);
+    console.log(`FestFlow listening on http://0.0.0.0:${port} (${realtime.clientsCount()} ws clients)`);
   });
 }
 

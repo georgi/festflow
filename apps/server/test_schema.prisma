@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./test.db"
+}
+
+enum TestEnum {
+  VALUE1
+  VALUE2
+}
+
+model TestModel {
+  id    String   @id @default(cuid())
+  field TestEnum
+}
