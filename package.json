@@ -1,0 +1,11 @@
+{
+  "name": "festflow",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm -C apps/server dev",
+    "build": "pnpm -C apps/web build && pnpm -C apps/server build",
+    "start": "pnpm -C apps/server start"
+  }
+}
+
