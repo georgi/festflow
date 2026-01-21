@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, User } from "lucide-react";
 import type { LoginUser, Role } from "@/api/types";
 
+const MIN_PIN_LENGTH = 3;
+
 type SearchParams = {
   next?: string;
 };
@@ -247,7 +249,7 @@ export function LoginPage() {
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && pin.length >= 3) {
+                if (e.key === "Enter" && pin.length >= MIN_PIN_LENGTH) {
                   void login();
                 }
               }}
@@ -257,7 +259,7 @@ export function LoginPage() {
             />
           </div>
 
-          <Button className="w-full" disabled={pin.length < 3 || loading} onClick={() => void login()}>
+          <Button className="w-full" disabled={pin.length < MIN_PIN_LENGTH || loading} onClick={() => void login()}>
             {loading ? "Logging in…" : "Login"}
           </Button>
           <Button className="w-full" variant="secondary" onClick={goBack}>
