@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageShell } from "@/components/layout/PageShell";
 import { Section } from "@/components/layout/Section";
 import {
@@ -15,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { AlertCircle } from "lucide-react";
 
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(priceCents / 100);
@@ -169,9 +171,10 @@ export function AdminPage() {
     >
 
       {error ? (
-        <div className="rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : null}
 
       <Section withDivider={false} title="Live overview" subtitle="Snapshot of current workload.">
@@ -384,12 +387,12 @@ export function AdminPage() {
                     <li key={item.id} className="rounded-xl border bg-background/60 px-3 py-2">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="font-medium">
-                            {item.name}{" "}
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{item.name}</span>
                             {item.soldOut ? (
-                              <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                                sold out
-                              </span>
+                              <Badge variant="secondary" className="text-xs">
+                                Sold out
+                              </Badge>
                             ) : null}
                           </div>
                           <div className="text-xs text-muted-foreground">Station: {item.station?.name ?? item.stationId}</div>

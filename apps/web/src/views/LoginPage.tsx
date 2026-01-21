@@ -3,6 +3,9 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 type SearchParams = {
   next?: string;
@@ -75,27 +78,36 @@ export function LoginPage() {
           <div className="text-sm text-muted-foreground">Login with name + PIN.</div>
           {search.role ? <div className="text-xs text-muted-foreground">Role: {search.role}</div> : null}
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {error ? (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           ) : null}
 
-          <Input
-            placeholder="Name (e.g. Mia)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoCapitalize="words"
-            autoCorrect="off"
-          />
-          <Input
-            placeholder="PIN"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-          />
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              placeholder="e.g. Mia"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoCapitalize="words"
+              autoCorrect="off"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="pin">PIN</Label>
+            <Input
+              id="pin"
+              placeholder="4-digit PIN"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+            />
+          </div>
 
           <Button className="w-full" disabled={!name.trim() || !pin || loading} onClick={() => void login()}>
             {loading ? "Logging in…" : "Login"}

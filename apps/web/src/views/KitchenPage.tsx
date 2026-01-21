@@ -5,7 +5,10 @@ import { useRealtime } from "../api/useRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageShell } from "@/components/layout/PageShell";
+import { AlertCircle } from "lucide-react";
 
 export function KitchenPage() {
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -50,12 +53,36 @@ export function KitchenPage() {
     >
       <div className="grid gap-3 md:grid-cols-2">
         {error ? (
-          <div className="md:col-span-2 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
-            {error}
-          </div>
+          <Alert variant="destructive" className="md:col-span-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : null}
 
-        {!orders || orders.length === 0 ? (
+        {!orders ? (
+          <>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          </>
+        ) : orders.length === 0 ? (
           <div className="text-sm text-muted-foreground">No kitchen items.</div>
         ) : (
           orders.map((order) => (
@@ -65,9 +92,9 @@ export function KitchenPage() {
                   <CardTitle className="text-lg">{order.table?.name ?? order.tableId}</CardTitle>
                   <div className="text-xs text-muted-foreground">Order {order.id} · Waiter {order.createdByName}</div>
                 </div>
-                <div className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                <Badge variant="secondary" className="text-xs">
                   {Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000))}m
-                </div>
+                </Badge>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
@@ -77,7 +104,9 @@ export function KitchenPage() {
                         <div className="font-medium">
                           {l.qty}× {l.menuItem?.name ?? l.menuItemId}
                         </div>
-                        <div className="text-xs text-muted-foreground">{l.status.toLowerCase().replace("_", " ")}</div>
+                        <Badge variant="outline" className="text-xs">
+                          {l.status.toLowerCase().replace("_", " ")}
+                        </Badge>
                       </div>
                       {l.note ? <div className="mt-1 text-xs text-muted-foreground">Note: {l.note}</div> : null}
                       <div className="mt-3 flex gap-2">

@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageShell } from "@/components/layout/PageShell";
 import { Section } from "@/components/layout/Section";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(priceCents / 100);
@@ -30,6 +33,7 @@ export function WaiterPage() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [showSendDialog, setShowSendDialog] = useState(false);
 
   async function refresh() {
     try {
@@ -93,8 +97,7 @@ export function WaiterPage() {
     if (!selectedTableId) return;
     if (cart.length === 0) return;
     if (sending) return; // Prevent double-submits
-    const ok = window.confirm("Send this order?");
-    if (!ok) return;
+    setShowSendDialog(false);
     setSending(true);
     setError(null);
     setOrderSuccess(false);
@@ -133,9 +136,10 @@ export function WaiterPage() {
       <Section withDivider={false} title="Tables and orders" subtitle="Select a table and review your active orders.">
         <div className="grid gap-6 md:grid-cols-2">
           {error ? (
-            <div className="md:col-span-2 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
-              {error}
-            </div>
+            <Alert variant="destructive" className="md:col-span-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           ) : null}
 
           <Card>
@@ -352,16 +356,17 @@ export function WaiterPage() {
               </ul>
 
               {orderSuccess ? (
-                <div className="mt-4 rounded-lg border border-green-700 bg-green-950/40 p-3 text-center text-sm text-green-200">
-                  ✓ Order sent successfully!
-                </div>
+                <Alert variant="success" className="mt-4">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertDescription>Order sent successfully!</AlertDescription>
+                </Alert>
               ) : null}
 
               <Button
                 className="mt-4 w-full"
                 type="button"
                 disabled={!selectedTableId || cart.length === 0 || sending}
-                onClick={() => void sendOrder()}
+                onClick={() => setShowSendDialog(true)}
               >
                 {sending ? "Sending…" : "Send order"}
               </Button>
@@ -369,6 +374,25 @@ export function WaiterPage() {
           </CardContent>
         </Card>
       </Section>
+
+      <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send order?</DialogTitle>
+            <DialogDescription>
+              You're about to send {cart.length} item{cart.length !== 1 ? 's' : ''} to the kitchen/bar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setShowSendDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => void sendOrder()}>
+              Send order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }
