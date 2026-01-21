@@ -387,12 +387,12 @@ export function AdminPage() {
                     <li key={item.id} className="rounded-xl border bg-background/60 px-3 py-2">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="font-medium">
-                            {item.name}{" "}
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{item.name}</span>
                             {item.soldOut ? (
-                              <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                                sold out
-                              </span>
+                              <Badge variant="secondary" className="text-xs">
+                                Sold out
+                              </Badge>
                             ) : null}
                           </div>
                           <div className="text-xs text-muted-foreground">Station: {item.station?.name ?? item.stationId}</div>

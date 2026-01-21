@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageShell } from "@/components/layout/PageShell";
 import { AlertCircle } from "lucide-react";
 
@@ -58,7 +59,30 @@ export function BarPage() {
           </Alert>
         ) : null}
 
-        {!orders || orders.length === 0 ? (
+        {!orders ? (
+          <>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          </>
+        ) : orders.length === 0 ? (
           <div className="text-sm text-muted-foreground">No bar items.</div>
         ) : (
           orders.map((order) => (
@@ -68,9 +92,9 @@ export function BarPage() {
                   <CardTitle className="text-lg">{order.table?.name ?? order.tableId}</CardTitle>
                   <div className="text-xs text-muted-foreground">Order {order.id} · Waiter {order.createdByName}</div>
                 </div>
-                <div className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                <Badge variant="secondary" className="text-xs">
                   {Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000))}m
-                </div>
+                </Badge>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
@@ -80,7 +104,9 @@ export function BarPage() {
                         <div className="font-medium">
                           {l.qty}× {l.menuItem?.name ?? l.menuItemId}
                         </div>
-                        <div className="text-xs text-muted-foreground">{l.status.toLowerCase().replace("_", " ")}</div>
+                        <Badge variant="outline" className="text-xs">
+                          {l.status.toLowerCase().replace("_", " ")}
+                        </Badge>
                       </div>
                       {l.note ? <div className="mt-1 text-xs text-muted-foreground">Note: {l.note}</div> : null}
                       <div className="mt-3 flex gap-2">
