@@ -30,7 +30,7 @@ export function LoginPage() {
   const nextRoute = useMemo(() => {
     if (!nextPath || nextPath === "/") return "/";
     // Remove query params but keep the leading slash
-    return "/" + nextPath.replace(/^\//, "").split("?")[0];
+    return nextPath.split("?")[0];
   }, [nextPath]);
 
   async function login() {
