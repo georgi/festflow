@@ -5,7 +5,9 @@ import { useRealtime } from "../api/useRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageShell } from "@/components/layout/PageShell";
+import { AlertCircle } from "lucide-react";
 
 export function BarPage() {
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -50,9 +52,10 @@ export function BarPage() {
     >
       <div className="grid gap-3 md:grid-cols-2">
         {error ? (
-          <div className="md:col-span-2 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
-            {error}
-          </div>
+          <Alert variant="destructive" className="md:col-span-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : null}
 
         {!orders || orders.length === 0 ? (
