@@ -189,7 +189,7 @@ Chosen stack (lock these before coding Phase 1+):
   - [ ] Cashier closes table and takes payment
 
 ### Role switching (PRD requirement)
-- [ ] If user has both WAITER and CASHIER roles, show easy access to cashier UI from waiter UI (no active role; just navigate)
+- [x] If user has both WAITER and CASHIER roles, show easy access to cashier UI from waiter UI (no active role; just navigate)
 
 ## Phase 6 — Admin Panel (setup + control)
 
@@ -249,10 +249,10 @@ Chosen stack (lock these before coding Phase 1+):
 
 ## Phase 10 — Polishing (trust + stability)
 
-- [ ] PIN login UX for all roles (fast switch user):
-  - [ ] Step 1: select user from cards (no typing)
-  - [ ] Step 2: enter PIN for selected user
-  - [ ] Post-login redirect to the best default route based on roles (or return to requested route if allowed)
+- [x] PIN login UX for all roles (fast switch user):
+  - [x] Step 1: select user from cards (no typing)
+  - [x] Step 2: enter PIN for selected user
+  - [x] Post-login redirect to the best default route based on roles (or return to requested route if allowed)
 - [ ] Auto-reconnect + resync behavior hardened (including backoff)
 - [ ] Kiosk mode for TVs/tablets (full-screen styling, minimal UI chrome)
 - [ ] Accessibility basics: high contrast, large targets, no tiny text

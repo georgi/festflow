@@ -23,22 +23,56 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
     })
   );
 
+  // Public endpoint: list active users for login card selection (no PIN hash exposed)
+  router.get(
+    "/auth/users",
+    asyncHandler(async (_req, res) => {
+      const users = await prisma.user.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, role: true }
+      });
+      res.json(users);
+    })
+  );
+
   router.post(
     "/auth/login",
     asyncHandler(async (req, res) => {
-      const body = z
+      // Accept either { userId, pin } or { name, pin }
+      const bodyByUserId = z
+        .object({
+          userId: z.string().min(1),
+          pin: z.string().min(3).max(12)
+        })
+        .safeParse(req.body);
+
+      const bodyByName = z
         .object({
           name: z.string().min(1),
           pin: z.string().min(3).max(12)
         })
         .safeParse(req.body);
-      if (!body.success) return sendBadRequest(res, "Invalid login payload");
 
-      const user = await prisma.user.findUnique({ where: { name: body.data.name } });
+      let user;
+      let pin: string;
+
+      if (bodyByUserId.success) {
+        // Login by userId
+        user = await prisma.user.findUnique({ where: { id: bodyByUserId.data.userId } });
+        pin = bodyByUserId.data.pin;
+      } else if (bodyByName.success) {
+        // Fallback: login by name
+        user = await prisma.user.findUnique({ where: { name: bodyByName.data.name } });
+        pin = bodyByName.data.pin;
+      } else {
+        return sendBadRequest(res, "Invalid login payload");
+      }
+
       if (!user || !user.active || !user.pinHash) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      if (!verifyPin(body.data.pin, user.pinHash)) {
+      if (!verifyPin(pin, user.pinHash)) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 

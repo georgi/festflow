@@ -14,15 +14,34 @@ import { KitchenPage } from "./views/KitchenPage";
 import { LoginPage } from "./views/LoginPage";
 import { WaiterPage } from "./views/WaiterPage";
 
-async function requireRole(role: "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN", nextPath: string) {
+type Role = "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN";
+
+// Define which roles can access which routes (multi-role support)
+function canRoleAccessRoute(userRole: Role, allowedRoles: Role[]): boolean {
+  // Direct role match
+  if (allowedRoles.includes(userRole)) return true;
+  
+  // Multi-role access: WAITER can access CASHIER routes and vice versa
+  if (userRole === "WAITER" && allowedRoles.includes("CASHIER")) return true;
+  if (userRole === "CASHIER" && allowedRoles.includes("WAITER")) return true;
+  
+  return false;
+}
+
+async function requireRole(allowedRoles: Role[], nextPath: string) {
   const res = await fetch("/api/auth/me", { headers: { Accept: "application/json" } });
   if (!res.ok) {
-    throw redirect({ to: "/login", search: { next: nextPath, role } });
+    // Not authenticated - redirect to login with next path (no role param)
+    throw redirect({ to: "/login", search: { next: nextPath } });
   }
-  const data = (await res.json()) as { user: { role: string } };
-  if (data.user.role !== role) {
-    throw redirect({ to: "/login", search: { next: nextPath, role } });
+  const data = (await res.json()) as { user: { role: Role } };
+  
+  // Check if user's role allows access to this route
+  if (!canRoleAccessRoute(data.user.role, allowedRoles)) {
+    throw redirect({ to: "/login", search: { next: nextPath } });
   }
+  
+  return data.user;
 }
 
 const rootRoute = createRootRoute({
@@ -37,7 +56,7 @@ const waiterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/waiter",
   beforeLoad: async ({ location }) => {
-    await requireRole("WAITER", location.pathname);
+    await requireRole(["WAITER", "CASHIER"], location.pathname);
   },
   component: () => (
     <>
@@ -51,7 +70,7 @@ const kitchenRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/kitchen",
   beforeLoad: async ({ location }) => {
-    await requireRole("KITCHEN", location.pathname);
+    await requireRole(["KITCHEN", "ADMIN"], location.pathname);
   },
   component: () => (
     <>
@@ -65,7 +84,7 @@ const barRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/bar",
   beforeLoad: async ({ location }) => {
-    await requireRole("BAR", location.pathname);
+    await requireRole(["BAR", "ADMIN"], location.pathname);
   },
   component: () => (
     <>
@@ -79,7 +98,7 @@ const cashierRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/cashier",
   beforeLoad: async ({ location }) => {
-    await requireRole("CASHIER", location.pathname);
+    await requireRole(["CASHIER", "WAITER"], location.pathname);
   },
   component: () => (
     <>
@@ -93,7 +112,7 @@ const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
   beforeLoad: async ({ location }) => {
-    await requireRole("ADMIN", location.pathname);
+    await requireRole(["ADMIN"], location.pathname);
   },
   component: () => (
     <>

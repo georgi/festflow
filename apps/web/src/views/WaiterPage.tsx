@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { apiGet, apiPatch, apiPost } from "../api/client";
 import type { Bootstrap, Me, MenuCategory, MenuItem, Order } from "../api/types";
 import { useRealtime } from "../api/useRealtime";
@@ -11,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageShell } from "@/components/layout/PageShell";
 import { Section } from "@/components/layout/Section";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Wallet } from "lucide-react";
 
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(priceCents / 100);
@@ -124,6 +125,12 @@ export function WaiterPage() {
       subtitle="Take orders fast and keep an eye on progress."
       actions={
         <>
+          <Link to="/cashier">
+            <Button size="sm" variant="outline" className="gap-1">
+              <Wallet className="h-4 w-4" />
+              Open Cashier
+            </Button>
+          </Link>
           <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
             {realtimeStatus}
           </Badge>

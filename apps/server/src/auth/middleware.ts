@@ -5,7 +5,7 @@ import { readSessionUser } from "./session";
 export type AuthUser = {
   id: string;
   name: string;
-  role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN";
+  role: "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN";
 };
 
 export async function getAuthUser(req: Request): Promise<AuthUser | null> {
@@ -25,6 +25,18 @@ export async function requireAuth(req: Request, res: Response): Promise<AuthUser
   return user;
 }
 
+// Check if user's role matches allowed roles, with multi-role support
+function hasRoleAccess(userRole: AuthUser["role"], allowedRoles: AuthUser["role"][]): boolean {
+  // Direct role match
+  if (allowedRoles.includes(userRole)) return true;
+  
+  // Multi-role access: WAITER and CASHIER can access each other's endpoints
+  if (userRole === "WAITER" && allowedRoles.includes("CASHIER")) return true;
+  if (userRole === "CASHIER" && allowedRoles.includes("WAITER")) return true;
+  
+  return false;
+}
+
 export async function requireRole(
   req: Request,
   res: Response,
@@ -32,7 +44,7 @@ export async function requireRole(
 ): Promise<AuthUser | null> {
   const user = await requireAuth(req, res);
   if (!user) return null;
-  if (!roles.includes(user.role)) {
+  if (!hasRoleAccess(user.role, roles)) {
     res.status(403).json({ error: "Forbidden" });
     return null;
   }
