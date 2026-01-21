@@ -9,6 +9,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -56,20 +59,7 @@ jobs:
           mkdir -p bundle
           cp -r dist bundle/
           cp -r prisma bundle/
-          # Create a production-ready package.json with runtime dependencies
-          node -e "
-            const pkg = require('./package.json');
-            const prodPkg = {
-              name: pkg.name,
-              type: pkg.type,
-              dependencies: {
-                ...pkg.dependencies,
-                '@prisma/client': pkg.devDependencies['@prisma/client'],
-                'prisma': pkg.devDependencies['prisma']
-              }
-            };
-            require('fs').writeFileSync('./bundle/package.json', JSON.stringify(prodPkg, null, 2));
-          "
+          node scripts/prepare-bundle.js
           cd bundle
           npm install
           npx prisma generate

@@ -1,6 +1,6 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, dialog } = require("electron");
 const path = require("path");
-const { spawn } = require("child_process");
+const { spawn, execSync } = require("child_process");
 const http = require("http");
 
 let mainWindow = null;
@@ -16,8 +16,47 @@ function getResourcePath(...segments) {
   return path.join(__dirname, "..", ...segments);
 }
 
-function getUserDataPath(...segments) {
-  return path.join(app.getPath("userData"), ...segments);
+/**
+ * Find the Node.js executable path.
+ * Returns the path to node if found, or null if not available.
+ */
+function findNodePath() {
+  // First, try using the PATH
+  const nodeCmd = process.platform === "win32" ? "node.exe" : "node";
+  
+  try {
+    // Try to get the actual path using 'which' (Unix) or 'where' (Windows)
+    const whichCmd = process.platform === "win32" ? "where" : "which";
+    const nodePath = execSync(`${whichCmd} ${nodeCmd}`, { encoding: "utf-8" }).trim().split("\n")[0];
+    if (nodePath) {
+      return nodePath;
+    }
+  } catch {
+    // Command failed, node not in PATH
+  }
+
+  // Try common installation paths
+  const commonPaths = process.platform === "win32"
+    ? [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Program Files (x86)\\nodejs\\node.exe",
+      ]
+    : [
+        "/usr/local/bin/node",
+        "/usr/bin/node",
+        "/opt/homebrew/bin/node",
+      ];
+
+  for (const p of commonPaths) {
+    try {
+      execSync(`"${p}" --version`, { encoding: "utf-8" });
+      return p;
+    } catch {
+      // This path doesn't work
+    }
+  }
+
+  return null;
 }
 
 function waitForServer(url, timeout = 30000) {
@@ -50,6 +89,13 @@ function waitForServer(url, timeout = 30000) {
 
 async function startServer() {
   return new Promise((resolve, reject) => {
+    // Find Node.js executable
+    const nodePath = findNodePath();
+    if (!nodePath) {
+      reject(new Error("Node.js is required but was not found. Please install Node.js and try again."));
+      return;
+    }
+
     // In packaged mode: resources/app/server/dist
     // In dev mode: ../server/dist
     const appRoot = getResourcePath(app.isPackaged ? "app" : "");
@@ -57,7 +103,8 @@ async function startServer() {
     const serverEntry = path.join(serverDistPath, "index.js");
 
     // Database stored in user data directory for persistence
-    const dbPath = getUserDataPath("festflow.db");
+    const userDataDir = app.getPath("userData");
+    const dbPath = path.join(userDataDir, "festflow.db");
 
     const env = {
       ...process.env,
@@ -66,11 +113,7 @@ async function startServer() {
       DATABASE_URL: `file:${dbPath}`,
     };
 
-    // Spawn node with the server entry point
-    // We rely on node being available on the system PATH
-    const nodeCmd = process.platform === "win32" ? "node.exe" : "node";
-
-    serverProcess = spawn(nodeCmd, [serverEntry], {
+    serverProcess = spawn(nodePath, [serverEntry], {
       env,
       cwd: serverDistPath,
       stdio: ["ignore", "pipe", "pipe"],
@@ -134,6 +177,12 @@ app.whenReady().then(async () => {
     createWindow();
   } catch (err) {
     console.error("Failed to start server:", err);
+    await dialog.showMessageBox({
+      type: "error",
+      title: "FestFlow Error",
+      message: "Failed to start the server",
+      detail: err.message || String(err),
+    });
     app.quit();
   }
 

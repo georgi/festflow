@@ -2,6 +2,8 @@
   "name": "@festflow/electron",
   "version": "1.0.0",
   "private": true,
+  "description": "FestFlow desktop application",
+  "author": "FestFlow",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
