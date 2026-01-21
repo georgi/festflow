@@ -73,7 +73,7 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
       const body = z
         .object({
           name: z.string().min(1),
-          role: z.enum(["WAITER", "KITCHEN", "BAR", "ADMIN"]),
+          role: z.enum(["WAITER", "KITCHEN", "BAR", "CASHIER", "ADMIN"]),
           pin: z.string().min(3).max(12)
         })
         .safeParse(req.body);
@@ -443,6 +443,41 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
         data: { status: "CANCELED", canceledReason: body.data.reason ?? "canceled" }
       });
       await prisma.orderLine.updateMany({ where: { orderId: id }, data: { status: "CANCELED" } });
+
+      opts.broadcast({ type: "db.change", ts: Date.now(), entity: "order", id: order.id });
+      res.json(order);
+    })
+  );
+
+  // Mark order as paid (Cashier)
+  router.patch(
+    "/orders/:id/pay",
+    asyncHandler(async (req, res) => {
+      const user = await requireRole(req, res, ["CASHIER", "ADMIN"]);
+      if (!user) return;
+      const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
+
+      const existing = await prisma.order.findUnique({ where: { id } });
+      if (!existing) return sendNotFound(res, "Order not found");
+      if (existing.status === "CANCELED") {
+        return sendBadRequest(res, "Cannot pay for a canceled order");
+      }
+
+      const order = await prisma.order.update({
+        where: { id },
+        data: {
+          paymentStatus: "PAID",
+          paidAt: new Date(),
+          paidById: user.id
+        },
+        include: {
+          table: true,
+          lines: {
+            include: { menuItem: true, station: true },
+            orderBy: { createdAt: "asc" }
+          }
+        }
+      });
 
       opts.broadcast({ type: "db.change", ts: Date.now(), entity: "order", id: order.id });
       res.json(order);

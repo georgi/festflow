@@ -36,7 +36,7 @@ Chosen stack (lock these before coding Phase 1+):
   - [x] `/waiter`
   - [x] `/kitchen`
   - [x] `/bar`
-  - [ ] `/cashier`
+  - [x] `/cashier`
   - [x] `/admin`
 - [x] Add hardcoded demo data (tables, menu, orders) and render read-only views
 - [x] Add a simple “role badge” header component used across pages
@@ -145,31 +145,31 @@ Chosen stack (lock these before coding Phase 1+):
 **Deliverable:** Cashier can see open tables/orders, view prices, take payment, and close orders/tables.
 
 ### Schema changes
-- [ ] Add `CASHIER` role to the Role enum in Prisma schema
-- [ ] Add payment fields to `Order` model:
-  - [ ] `paidAt` (DateTime, nullable)
-  - [ ] `paidById` (reference to User who took payment)
-  - [ ] `paymentStatus` (UNPAID | PAID)
+- [x] Add `CASHIER` role to the Role enum in Prisma schema
+- [x] Add payment fields to `Order` model:
+  - [x] `paidAt` (DateTime, nullable)
+  - [x] `paidById` (reference to User who took payment)
+  - [x] `paymentStatus` (UNPAID | PAID)
 - [ ] Add `EventSettings` model for event mode selection:
   - [ ] `eventMode` (MODE_A: Kassieren→Bestellung | MODE_B: Bestellung→Kassieren)
 
 ### Routes + UI
-- [ ] Create `/cashier` route with role protection
-- [ ] Create `CashierPage.tsx` component
+- [x] Create `/cashier` route with role protection
+- [x] Create `CashierPage.tsx` component
 - [ ] Cashier page features:
-  - [ ] List open tables (Mode B) or pending orders (Mode A)
-  - [ ] Show order totals with prices
-  - [ ] "Mark as Paid" button to close order/table
+  - [x] List open tables (Mode B) or pending orders (Mode A)
+  - [x] Show order totals with prices
+  - [x] "Mark as Paid" button to close order/table
   - [ ] View order details before payment
 
 ### API endpoints
-- [ ] `PATCH /orders/:id/pay` – mark order as paid (CASHIER role)
+- [x] `PATCH /orders/:id/pay` – mark order as paid (CASHIER role)
 - [ ] `GET /cashier/open-orders` – list orders pending payment
 - [ ] `GET /event-settings` – get current event mode
 - [ ] `PATCH /event-settings` – update event mode (ADMIN only)
 
 ### Seed data
-- [ ] Add demo Cashier user (e.g., "Cashier" / PIN "5555")
+- [x] Add demo Cashier user (e.g., "Cashier" / PIN "5555")
 
 ### Event Mode Support
 - [ ] Mode A (Kassieren → Bestellung):

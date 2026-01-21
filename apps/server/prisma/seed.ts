@@ -95,6 +95,12 @@ async function main() {
   });
 
   await prisma.user.upsert({
+    where: { name: "Cashier" },
+    update: { role: Role.CASHIER, active: true, pinHash: hashPin("5555") },
+    create: { name: "Cashier", role: Role.CASHIER, pinHash: hashPin("5555") }
+  });
+
+  await prisma.user.upsert({
     where: { name: "Admin" },
     update: { role: Role.ADMIN, active: true, pinHash: hashPin("0000") },
     create: { name: "Admin", role: Role.ADMIN, pinHash: hashPin("0000") }
