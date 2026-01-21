@@ -36,7 +36,7 @@ const waiterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/waiter",
   beforeLoad: async ({ location }) => {
-    await requireRole("WAITER", location.pathname + location.search);
+    await requireRole("WAITER", location.pathname);
   },
   component: () => (
     <>
@@ -50,7 +50,7 @@ const kitchenRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/kitchen",
   beforeLoad: async ({ location }) => {
-    await requireRole("KITCHEN", location.pathname + location.search);
+    await requireRole("KITCHEN", location.pathname);
   },
   component: () => (
     <>
@@ -64,7 +64,7 @@ const barRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/bar",
   beforeLoad: async ({ location }) => {
-    await requireRole("BAR", location.pathname + location.search);
+    await requireRole("BAR", location.pathname);
   },
   component: () => (
     <>
@@ -78,7 +78,7 @@ const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
   beforeLoad: async ({ location }) => {
-    await requireRole("ADMIN", location.pathname + location.search);
+    await requireRole("ADMIN", location.pathname);
   },
   component: () => (
     <>

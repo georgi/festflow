@@ -26,11 +26,11 @@ export function LoginPage() {
     return "/";
   }, [search.next]);
 
-  // Extract just the route name from the path (e.g., "/waiter" -> "waiter")
+  // Extract just the route path (e.g., "/waiter?foo=bar" -> "/waiter")
   const nextRoute = useMemo(() => {
     if (!nextPath || nextPath === "/") return "/";
-    // Remove leading slash and any query params
-    return nextPath.replace(/^\//, "").split("?")[0] || "/";
+    // Remove query params but keep the leading slash
+    return nextPath.split("?")[0];
   }, [nextPath]);
 
   async function login() {
