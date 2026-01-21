@@ -16,16 +16,9 @@ import { WaiterPage } from "./views/WaiterPage";
 
 type Role = "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN";
 
-// Define which roles can access which routes (multi-role support)
-function canRoleAccessRoute(userRole: Role, allowedRoles: Role[]): boolean {
-  // Direct role match
-  if (allowedRoles.includes(userRole)) return true;
-  
-  // Multi-role access: WAITER can access CASHIER routes and vice versa
-  if (userRole === "WAITER" && allowedRoles.includes("CASHIER")) return true;
-  if (userRole === "CASHIER" && allowedRoles.includes("WAITER")) return true;
-  
-  return false;
+// Check if user's roles intersect with allowed roles
+function canRolesAccessRoute(userRoles: Role[], allowedRoles: Role[]): boolean {
+  return userRoles.some((role) => allowedRoles.includes(role));
 }
 
 async function requireRole(allowedRoles: Role[], nextPath: string) {
@@ -34,10 +27,10 @@ async function requireRole(allowedRoles: Role[], nextPath: string) {
     // Not authenticated - redirect to login with next path (no role param)
     throw redirect({ to: "/login", search: { next: nextPath } });
   }
-  const data = (await res.json()) as { user: { role: Role } };
+  const data = (await res.json()) as { user: { roles: Role[] } };
   
-  // Check if user's role allows access to this route
-  if (!canRoleAccessRoute(data.user.role, allowedRoles)) {
+  // Check if user's roles allow access to this route
+  if (!canRolesAccessRoute(data.user.roles, allowedRoles)) {
     throw redirect({ to: "/login", search: { next: nextPath } });
   }
   
@@ -56,7 +49,7 @@ const waiterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/waiter",
   beforeLoad: async ({ location }) => {
-    await requireRole(["WAITER", "CASHIER"], location.pathname);
+    await requireRole(["WAITER"], location.pathname);
   },
   component: () => (
     <>
@@ -98,7 +91,7 @@ const cashierRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/cashier",
   beforeLoad: async ({ location }) => {
-    await requireRole(["CASHIER", "WAITER"], location.pathname);
+    await requireRole(["CASHIER"], location.pathname);
   },
   component: () => (
     <>

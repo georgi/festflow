@@ -7,6 +7,29 @@ const databaseUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
 const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
+// Helper to upsert user with roles
+async function upsertUserWithRoles(
+  name: string,
+  roles: Role[],
+  pin: string
+) {
+  const user = await prisma.user.upsert({
+    where: { name },
+    update: { active: true, pinHash: hashPin(pin) },
+    create: { name, pinHash: hashPin(pin) }
+  });
+
+  // Delete existing roles and recreate
+  await prisma.userRole.deleteMany({ where: { userId: user.id } });
+  for (const role of roles) {
+    await prisma.userRole.create({
+      data: { userId: user.id, role }
+    });
+  }
+
+  return user;
+}
+
 async function main() {
   const kitchen = await prisma.station.upsert({
     where: { name: "Kitchen" },
@@ -70,41 +93,18 @@ async function main() {
     });
   }
 
-  await prisma.user.upsert({
-    where: { name: "Mia" },
-    update: { role: Role.WAITER, active: true, pinHash: hashPin("1111") },
-    create: { name: "Mia", role: Role.WAITER, pinHash: hashPin("1111") }
-  });
+  // Multi-role user: Mia can be both WAITER and CASHIER
+  await upsertUserWithRoles("Mia", [Role.WAITER, Role.CASHIER], "1111");
 
-  await prisma.user.upsert({
-    where: { name: "Noah" },
-    update: { role: Role.WAITER, active: true, pinHash: hashPin("2222") },
-    create: { name: "Noah", role: Role.WAITER, pinHash: hashPin("2222") }
-  });
+  await upsertUserWithRoles("Noah", [Role.WAITER], "2222");
 
-  await prisma.user.upsert({
-    where: { name: "Kitchen" },
-    update: { role: Role.KITCHEN, active: true, pinHash: hashPin("3333") },
-    create: { name: "Kitchen", role: Role.KITCHEN, pinHash: hashPin("3333") }
-  });
+  await upsertUserWithRoles("Kitchen", [Role.KITCHEN], "3333");
 
-  await prisma.user.upsert({
-    where: { name: "Bar" },
-    update: { role: Role.BAR, active: true, pinHash: hashPin("4444") },
-    create: { name: "Bar", role: Role.BAR, pinHash: hashPin("4444") }
-  });
+  await upsertUserWithRoles("Bar", [Role.BAR], "4444");
 
-  await prisma.user.upsert({
-    where: { name: "Cashier" },
-    update: { role: Role.CASHIER, active: true, pinHash: hashPin("5555") },
-    create: { name: "Cashier", role: Role.CASHIER, pinHash: hashPin("5555") }
-  });
+  await upsertUserWithRoles("Cashier", [Role.CASHIER], "5555");
 
-  await prisma.user.upsert({
-    where: { name: "Admin" },
-    update: { role: Role.ADMIN, active: true, pinHash: hashPin("0000") },
-    create: { name: "Admin", role: Role.ADMIN, pinHash: hashPin("0000") }
-  });
+  await upsertUserWithRoles("Admin", [Role.ADMIN], "0000");
 }
 
 main()

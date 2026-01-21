@@ -30,9 +30,13 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
       const users = await prisma.user.findMany({
         where: { active: true },
         orderBy: { name: "asc" },
-        select: { id: true, name: true, role: true }
+        select: { id: true, name: true, roles: { select: { role: true } } }
       });
-      res.json(users);
+      res.json(users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        roles: u.roles.map((r) => r.role)
+      })));
     })
   );
 
@@ -59,11 +63,17 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
 
       if (bodyByUserId.success) {
         // Login by userId
-        user = await prisma.user.findUnique({ where: { id: bodyByUserId.data.userId } });
+        user = await prisma.user.findUnique({
+          where: { id: bodyByUserId.data.userId },
+          include: { roles: true }
+        });
         pin = bodyByUserId.data.pin;
       } else if (bodyByName.success) {
         // Fallback: login by name
-        user = await prisma.user.findUnique({ where: { name: bodyByName.data.name } });
+        user = await prisma.user.findUnique({
+          where: { name: bodyByName.data.name },
+          include: { roles: true }
+        });
         pin = bodyByName.data.pin;
       } else {
         return sendBadRequest(res, "Invalid login payload");
@@ -77,7 +87,13 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
       }
 
       setSessionCookie(res, { id: user.id });
-      res.json({ user: { id: user.id, name: user.name, role: user.role } });
+      res.json({
+        user: {
+          id: user.id,
+          name: user.name,
+          roles: user.roles.map((r) => r.role)
+        }
+      });
     })
   );
 
@@ -95,7 +111,18 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
     asyncHandler(async (req, res) => {
       const user = await requireRole(req, res, ["ADMIN"]);
       if (!user) return;
-      res.json(await prisma.user.findMany({ orderBy: { name: "asc" } }));
+      const users = await prisma.user.findMany({
+        orderBy: { name: "asc" },
+        include: { roles: true }
+      });
+      res.json(users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        active: u.active,
+        roles: u.roles.map((r) => r.role),
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt
+      })));
     })
   );
 
@@ -107,7 +134,7 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
       const body = z
         .object({
           name: z.string().min(1),
-          role: z.enum(["WAITER", "KITCHEN", "BAR", "CASHIER", "ADMIN"]),
+          roles: z.array(z.enum(["WAITER", "KITCHEN", "BAR", "CASHIER", "ADMIN"])).min(1),
           pin: z.string().min(3).max(12)
         })
         .safeParse(req.body);
@@ -116,12 +143,22 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
       const created = await prisma.user.create({
         data: {
           name: body.data.name,
-          role: body.data.role,
-          pinHash: hashPin(body.data.pin)
-        }
+          pinHash: hashPin(body.data.pin),
+          roles: {
+            create: body.data.roles.map((role) => ({ role }))
+          }
+        },
+        include: { roles: true }
       });
 
-      res.status(201).json(created);
+      res.status(201).json({
+        id: created.id,
+        name: created.name,
+        active: created.active,
+        roles: created.roles.map((r) => r.role),
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt
+      });
     })
   );
 
@@ -536,11 +573,19 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
         include: { station: true }
       });
       if (!lineWithStation) return sendNotFound(res, "Order line not found");
-      if (user.role === "KITCHEN" && lineWithStation.station.type !== "KITCHEN") {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-      if (user.role === "BAR" && lineWithStation.station.type !== "BAR") {
-        return res.status(403).json({ error: "Forbidden" });
+      
+      // Check station access based on user roles
+      const hasKitchenRole = user.roles.includes("KITCHEN");
+      const hasBarRole = user.roles.includes("BAR");
+      const hasAdminRole = user.roles.includes("ADMIN");
+      
+      if (!hasAdminRole) {
+        if (lineWithStation.station.type === "KITCHEN" && !hasKitchenRole) {
+          return res.status(403).json({ error: "Forbidden" });
+        }
+        if (lineWithStation.station.type === "BAR" && !hasBarRole) {
+          return res.status(403).json({ error: "Forbidden" });
+        }
       }
 
       const line = await prisma.orderLine.update({

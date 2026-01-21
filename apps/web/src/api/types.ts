@@ -50,12 +50,12 @@ export type Bootstrap = {
 
 export type Role = "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN";
 
-export type Me = { user: { id: string; name: string; role: Role } };
+export type Me = { user: { id: string; name: string; roles: Role[] } };
 
 export type User = {
   id: string;
   name: string;
-  role: Role;
+  roles: Role[];
   active: boolean;
 };
 
@@ -63,5 +63,5 @@ export type User = {
 export type LoginUser = {
   id: string;
   name: string;
-  role: Role;
+  roles: Role[];
 };

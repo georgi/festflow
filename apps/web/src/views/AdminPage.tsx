@@ -38,7 +38,7 @@ export function AdminPage() {
   const [newItemCategoryId, setNewItemCategoryId] = useState<string>("");
   const [newItemStationId, setNewItemStationId] = useState<string>("");
   const [newUserName, setNewUserName] = useState("");
-  const [newUserRole, setNewUserRole] = useState<User["role"]>("WAITER");
+  const [newUserRoles, setNewUserRoles] = useState<Set<string>>(new Set(["WAITER"]));
   const [newUserPin, setNewUserPin] = useState("");
 
   async function refresh() {
@@ -138,16 +138,16 @@ export function AdminPage() {
   }
 
   async function createUser() {
-    if (!newUserName.trim() || !newUserPin) return;
+    if (!newUserName.trim() || !newUserPin || newUserRoles.size === 0) return;
     try {
       await apiPost("/api/users", {
         name: newUserName.trim(),
-        role: newUserRole,
+        roles: Array.from(newUserRoles),
         pin: newUserPin
       });
       setNewUserName("");
       setNewUserPin("");
-      setNewUserRole("WAITER");
+      setNewUserRoles(new Set(["WAITER"]));
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -422,30 +422,42 @@ export function AdminPage() {
             <div className="text-xs text-muted-foreground">Create role logins with short PINs.</div>
           </CardHeader>
           <CardContent>
-          <div className="grid gap-2 md:grid-cols-3">
-            <Input
-              placeholder="Name"
-              value={newUserName}
-              onChange={(e) => setNewUserName(e.target.value)}
-            />
-          <Select value={newUserRole} onValueChange={(value) => setNewUserRole(value as User["role"])}>
-            <SelectTrigger>
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="WAITER">WAITER</SelectItem>
-              <SelectItem value="KITCHEN">KITCHEN</SelectItem>
-              <SelectItem value="BAR">BAR</SelectItem>
-              <SelectItem value="ADMIN">ADMIN</SelectItem>
-            </SelectContent>
-          </Select>
-            <Input
-              placeholder="PIN"
-              value={newUserPin}
-              onChange={(e) => setNewUserPin(e.target.value)}
-              inputMode="numeric"
-            />
-            <Button className="md:col-span-3" variant="secondary" onClick={() => void createUser()}>
+          <div className="grid gap-3">
+            <div className="grid gap-2 md:grid-cols-2">
+              <Input
+                placeholder="Name"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+              />
+              <Input
+                placeholder="PIN"
+                value={newUserPin}
+                onChange={(e) => setNewUserPin(e.target.value)}
+                inputMode="numeric"
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {(["WAITER", "CASHIER", "KITCHEN", "BAR", "ADMIN"] as const).map((role) => (
+                <label key={role} className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-border accent-primary"
+                    checked={newUserRoles.has(role)}
+                    onChange={(e) => {
+                      const next = new Set(newUserRoles);
+                      if (e.target.checked) {
+                        next.add(role);
+                      } else {
+                        next.delete(role);
+                      }
+                      setNewUserRoles(next);
+                    }}
+                  />
+                  <span className="text-sm">{role}</span>
+                </label>
+              ))}
+            </div>
+            <Button variant="secondary" onClick={() => void createUser()} disabled={newUserRoles.size === 0}>
               Add user
             </Button>
           </div>
@@ -456,7 +468,7 @@ export function AdminPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{u.name}</div>
-                    <div className="text-xs text-muted-foreground">{u.role}</div>
+                    <div className="text-xs text-muted-foreground">{u.roles.join(", ")}</div>
                   </div>
                   <div className="text-xs text-muted-foreground">{u.active ? "active" : "disabled"}</div>
                 </div>
