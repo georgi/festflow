@@ -15,3 +15,10 @@ dist
 .env.*
 
 *.log
+
+# Electron build output
+apps/electron/out
+**/out
+
+# Server bundle for electron packaging
+apps/server/bundle
