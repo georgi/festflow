@@ -1,69 +1,213 @@
-You set up one small FestFlow box at your event and create a local WiFi. Everyone connects to it with their phone, tablet, or screen. No apps to install. No internet needed. Just open a website.
+FestFlow PRD – Minimal, Clear, Closed System
 
-Once connected, each person sees exactly what they need.
+FestFlow is a local web system that runs an event.
+One box. One WiFi. One website.
 
-The waiters:
-	•	Open FestFlow in their phone browser
-	•	Select a table
-	•	Tap the food and drinks
-	•	Add notes for special wishes
-	•	Send the order
-	•	See which of their orders are still open
-	•	See an estimated waiting time
+No internet.
+No app.
+No accounts outside the event.
+No complexity.
 
-The kitchen:
-	•	Opens FestFlow on a tablet or TV
-	•	Sees all food orders instantly
-	•	Orders are sorted by waiting time
-	•	Can group by product to prepare many items at once
-	•	Marks orders as done when finished
-	•	A receipt can be printed automatically
+Everyone connects and sees exactly one thing: what they need to do.
 
-The bar:
-	•	Works exactly like the kitchen
-	•	Only sees drink orders
-	•	Marks them done when prepared
-	•	Hands drinks to the runners
+⸻
 
-The organizer:
-	•	Opens the admin view
-	•	Sets up:
-	•	Menu and prices
-	•	Tables and seating
-	•	Kitchen, bar, grill, coffee stations
-	•	Can mark products as sold out so they cannot be ordered anymore
-	•	Sees how busy each area is
-	•	Downloads reports after the event
+Core principle
 
-Everything happens live:
-	•	When a waiter sends an order, it appears instantly in kitchen and bar
-	•	When kitchen finishes, the waiter sees it
-	•	No shouting, no paper, no confusion
+FestFlow only does three things:
+	1.	Take orders
+	2.	Prepare orders
+	3.	Close orders
 
-If something is wrong:
-	•	Orders can be canceled
-	•	Items can be changed
-	•	Sold-out food disappears automatically from the menu
+Everything else is a consequence.
 
-At the end of the event you can:
-	•	Download a simple file for Excel
-	•	See:
+⸻
+
+Roles
+
+There are only four roles:
+
+Waiter    → creates orders
+Kitchen   → prepares food
+Bar       → prepares drinks
+Cashier   → takes money
+Organizer → sets everything up
+
+A user can have more than one role, but the roles stay conceptually separate.
+
+⸻
+
+Two event modes
+
+The organizer chooses one mode at setup.
+
+Mode A: KASSIEREN → BESTELLUNG
+Mode B: BESTELLUNG → KASSIEREN
+
+Nothing else.
+
+⸻
+
+Mode A
+Kassieren → Bestellung
+(Food stands, Vereinsfeste, self-service)
+
+Flow:
+	1.	Cashier enters the order
+	2.	Cashier takes payment
+	3.	Only after payment the order is created
+	4.	Order goes to kitchen/bar
+
+Rules:
+	•	No unpaid orders exist
+	•	No tables
+	•	No open bills
+	•	Kitchen only sees paid orders
+
+State:
+
+paid → preparing → done
+
+
+⸻
+
+Mode B
+Bestellung → Kassieren
+(Restaurant model)
+
+Flow:
+	1.	Waiter creates order at table
+	2.	Kitchen/Bar prepares
+	3.	Cashier closes the table and takes payment
+
+State:
+
+open → preparing → done → paid → closed
+
+That is all.
+
+No hidden states.
+
+⸻
+
+Waiter
+
+Can:
+	•	Select table
+	•	Add food and drinks
+	•	Add notes
+	•	Send order
+	•	See order status
+	•	See waiting time
+
+Cannot:
+	•	See prices
+	•	See money
+	•	Take payment (unless also cashier)
+
+⸻
+
+Kitchen
+
+Can:
+	•	See food orders
+	•	Sort by waiting time
+	•	Group by product
+	•	Mark done
+
+Cannot:
+	•	See prices
+	•	See tables
+	•	See payments
+
+⸻
+
+Bar
+
+Same as kitchen, only drinks.
+
+⸻
+
+Cashier
+
+Can:
+	•	See open tables or open orders
+	•	See prices
+	•	Take payment
+	•	Close order or table
+
+That’s it.
+No accounting UI.
+No finance dashboards.
+
+⸻
+
+Waiter can also cashier
+
+Simple rule:
+
+If a user has both roles:
+
+[waiter, cashier]
+
+then the UI shows a button:
+
+Switch to cashier
+
+The person does both jobs, but the system still knows:
+	•	When they acted as waiter
+	•	When they acted as cashier
+
+No mixing.
+Just switching.
+
+⸻
+
+Organizer
+
+Can:
+	•	Choose event mode
+	•	Create roles
+	•	Set menu and prices
+	•	Set tables (only in restaurant mode)
+	•	Download Excel after the event
+
+Excel contains:
 	•	Total revenue
 	•	Revenue per product
 	•	Revenue per waiter
-	•	Best-selling items
+	•	Best sellers
 	•	Busy hours
 
-For you it feels like this:
+Nothing more.
 
-You turn on the system.
-You open the WiFi.
-Everyone connects.
-The event runs.
+⸻
 
-No paperwork.
-No lost orders.
-No guessing what the kitchen is doing.
-No guessing what is still open.
+Live rules
+	•	Orders appear instantly
+	•	Status updates propagate instantly
+	•	Sold-out items disappear instantly
+	•	Cancelled items disappear instantly
 
-FestFlow becomes the silent coordination center of your event.
+⸻
+
+What FestFlow is not
+	•	Not a POS replacement
+	•	Not a restaurant ERP
+	•	Not a finance system
+	•	Not an accounting tool
+
+It is a coordination system.
+
+⸻
+
+Mental model
+
+Turn it on.
+Open WiFi.
+People connect.
+Orders flow.
+Food flows.
+Money flows.
+
+FestFlow just keeps everything aligned.
