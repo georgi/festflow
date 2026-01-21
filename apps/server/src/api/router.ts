@@ -329,14 +329,25 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
     asyncHandler(async (req, res) => {
       const user = await requireAuth(req, res);
       if (!user) return;
-      const status = z.enum(["OPEN", "DONE", "CANCELED"]).optional().safeParse(req.query.status);
-      const where = status.success && status.data ? { status: status.data } : {};
+      
+      // Support single status or comma-separated list of statuses
+      const statusParam = req.query.status;
+      let statusWhere: { status?: { in: string[] } | string } = {};
+      if (typeof statusParam === "string" && statusParam.length > 0) {
+        const statuses = statusParam.split(",").map(s => s.trim());
+        const validStatuses = statuses.filter(s => ["OPEN", "DONE", "CANCELED"].includes(s));
+        if (validStatuses.length === 1) {
+          statusWhere = { status: validStatuses[0] };
+        } else if (validStatuses.length > 1) {
+          statusWhere = { status: { in: validStatuses } };
+        }
+      }
 
       const mine = req.query.mine === "1";
       const mineWhere = mine ? { createdById: user.id } : {};
 
       const orders = await prisma.order.findMany({
-        where: { ...where, ...mineWhere },
+        where: { ...statusWhere, ...mineWhere },
         orderBy: { createdAt: "desc" },
         include: {
           table: true,

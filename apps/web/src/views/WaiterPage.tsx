@@ -29,13 +29,14 @@ export function WaiterPage() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
   async function refresh() {
     try {
       setError(null);
       const [b, o, meRes] = await Promise.all([
         apiGet<Bootstrap>("/api/bootstrap"),
-        apiGet<Order[]>("/api/orders?status=OPEN&mine=1"),
+        apiGet<Order[]>("/api/orders?status=OPEN,DONE&mine=1"),
         apiGet<Me>("/api/auth/me")
       ]);
       setBootstrap(b);
@@ -91,16 +92,21 @@ export function WaiterPage() {
   async function sendOrder() {
     if (!selectedTableId) return;
     if (cart.length === 0) return;
+    if (sending) return; // Prevent double-submits
     const ok = window.confirm("Send this order?");
     if (!ok) return;
     setSending(true);
     setError(null);
+    setOrderSuccess(false);
     try {
       await apiPost<Order>("/api/orders", {
         tableId: selectedTableId,
         lines: cart
       });
       setCart([]);
+      setOrderSuccess(true);
+      // Clear success message after 3 seconds
+      setTimeout(() => setOrderSuccess(false), 3000);
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -161,18 +167,28 @@ export function WaiterPage() {
 
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xl">My open orders</CardTitle>
+              <CardTitle className="text-xl">My orders</CardTitle>
               <div className="text-xs text-muted-foreground">{me?.name ?? ""}</div>
             </CardHeader>
             <CardContent className="space-y-3">
               {myOpenOrders.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No open orders.</div>
+                <div className="text-sm text-muted-foreground">No orders.</div>
               ) : (
                 myOpenOrders.map((o) => (
-                  <div key={o.id} className="rounded-xl border bg-muted/40 p-3">
+                  <div
+                    key={o.id}
+                    className={`rounded-xl border p-3 ${o.status === "DONE" ? "border-green-700 bg-green-950/40" : "bg-muted/40"}`}
+                  >
                     <div className="flex items-center justify-between">
-                      <div className="font-medium">
-                        {o.table?.name ?? o.tableId}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {o.table?.name ?? o.tableId}
+                        </span>
+                        {o.status === "DONE" ? (
+                          <Badge variant="secondary" className="bg-green-700 text-green-100 text-[10px] uppercase">
+                            Ready to serve
+                          </Badge>
+                        ) : null}
                       </div>
                       <div className="text-xs text-muted-foreground">{minutesSinceIso(o.createdAt)}m</div>
                     </div>
@@ -191,25 +207,27 @@ export function WaiterPage() {
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-3 flex justify-end">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        type="button"
-                        onClick={async () => {
-                          const ok = window.confirm("Cancel this order?");
-                          if (!ok) return;
-                          try {
-                            await apiPatch(`/api/orders/${o.id}/cancel`, { reason: "canceled by waiter" });
-                            await refresh();
-                          } catch (e) {
-                            setError(e instanceof Error ? e.message : String(e));
-                          }
-                        }}
-                      >
-                        Cancel order
-                      </Button>
-                    </div>
+                    {o.status === "OPEN" ? (
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          type="button"
+                          onClick={async () => {
+                            const ok = window.confirm("Cancel this order?");
+                            if (!ok) return;
+                            try {
+                              await apiPatch(`/api/orders/${o.id}/cancel`, { reason: "canceled by waiter" });
+                              await refresh();
+                            } catch (e) {
+                              setError(e instanceof Error ? e.message : String(e));
+                            }
+                          }}
+                        >
+                          Cancel order
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 ))
               )}
@@ -332,6 +350,12 @@ export function WaiterPage() {
                 })}
                 {cart.length === 0 ? <div className="text-sm text-slate-500">Empty.</div> : null}
               </ul>
+
+              {orderSuccess ? (
+                <div className="mt-4 rounded-lg border border-green-700 bg-green-950/40 p-3 text-center text-sm text-green-200">
+                  ✓ Order sent successfully!
+                </div>
+              ) : null}
 
               <Button
                 className="mt-4 w-full"
