@@ -48,11 +48,20 @@ export type Bootstrap = {
   items: MenuItem[];
 };
 
-export type Me = { user: { id: string; name: string; role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN" } };
+export type Role = "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN";
+
+export type Me = { user: { id: string; name: string; role: Role } };
 
 export type User = {
   id: string;
   name: string;
-  role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN";
+  role: Role;
   active: boolean;
+};
+
+// For public login endpoint - minimal user info for card selection
+export type LoginUser = {
+  id: string;
+  name: string;
+  role: Role;
 };

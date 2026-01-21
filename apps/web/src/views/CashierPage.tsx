@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useRealtime } from "../api/useRealtime";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ClipboardList } from "lucide-react";
 
 interface OrderLine {
   id: string;
@@ -112,7 +114,15 @@ export function CashierPage() {
 
   return (
     <div className="p-4">
-      <h1 className="mb-4 text-2xl font-semibold">Open Orders</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Open Orders</h1>
+        <Link to="/waiter">
+          <Button size="sm" variant="outline" className="gap-1">
+            <ClipboardList className="h-4 w-4" />
+            Open Waiter
+          </Button>
+        </Link>
+      </div>
       
       {orders.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
