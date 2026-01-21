@@ -14,42 +14,46 @@ type SearchParams = {
   next?: string;
 };
 
-// Determine the best default route based on user's role
-function getDefaultRouteForRole(role: Role): string {
-  switch (role) {
-    case "WAITER":
-      return "/waiter";
-    case "CASHIER":
-      return "/cashier";
-    case "KITCHEN":
-      return "/kitchen";
-    case "BAR":
-      return "/bar";
-    case "ADMIN":
-      return "/admin";
-    default:
-      return "/";
+// Priority order for default routes when no specific route is requested
+const ROLE_PRIORITY: Role[] = ["WAITER", "CASHIER", "ADMIN", "KITCHEN", "BAR"];
+
+// Determine the best default route based on user's roles (priority order)
+function getDefaultRouteForRoles(roles: Role[]): string {
+  for (const role of ROLE_PRIORITY) {
+    if (roles.includes(role)) {
+      switch (role) {
+        case "WAITER":
+          return "/waiter";
+        case "CASHIER":
+          return "/cashier";
+        case "ADMIN":
+          return "/admin";
+        case "KITCHEN":
+          return "/kitchen";
+        case "BAR":
+          return "/bar";
+      }
+    }
   }
+  return "/";
 }
 
-// Check if a user's role allows access to a given route
-function canAccessRoute(role: Role, route: string): boolean {
+// Check if user's roles allow access to a given route
+function canAccessRoute(roles: Role[], route: string): boolean {
   // Extract the base path (e.g., "/waiter?foo=bar" -> "/waiter")
   const basePath = route.split("?")[0];
   
   switch (basePath) {
     case "/waiter":
-      // WAITER and CASHIER can both access waiter page
-      return role === "WAITER" || role === "CASHIER";
+      return roles.includes("WAITER");
     case "/cashier":
-      // WAITER and CASHIER can both access cashier page
-      return role === "WAITER" || role === "CASHIER";
+      return roles.includes("CASHIER");
     case "/kitchen":
-      return role === "KITCHEN" || role === "ADMIN";
+      return roles.includes("KITCHEN") || roles.includes("ADMIN");
     case "/bar":
-      return role === "BAR" || role === "ADMIN";
+      return roles.includes("BAR") || roles.includes("ADMIN");
     case "/admin":
-      return role === "ADMIN";
+      return roles.includes("ADMIN");
     default:
       return true;
   }
@@ -129,17 +133,17 @@ export function LoginPage() {
         throw new Error(msg || "Login failed");
       }
 
-      const data = (await res.json()) as { user: { role: Role } };
+      const data = (await res.json()) as { user: { roles: Role[] } };
 
       // Determine where to navigate after login
       let targetRoute: string;
       
-      if (nextRoute && canAccessRoute(data.user.role, nextRoute)) {
+      if (nextRoute && canAccessRoute(data.user.roles, nextRoute)) {
         // If there's a requested next route and user can access it, go there
         targetRoute = nextRoute;
       } else {
-        // Otherwise, go to the best default route for their role
-        targetRoute = getDefaultRouteForRole(data.user.role);
+        // Otherwise, go to the best default route for their roles (by priority)
+        targetRoute = getDefaultRouteForRoles(data.user.roles);
       }
 
       await navigate({ to: targetRoute });
@@ -193,7 +197,7 @@ export function LoginPage() {
                     </div>
                     <div className="text-center">
                       <div className="font-medium">{user.name}</div>
-                      <div className="text-xs text-muted-foreground">{user.role}</div>
+                      <div className="text-xs text-muted-foreground">{user.roles.join(", ")}</div>
                     </div>
                   </Button>
                 ))}
