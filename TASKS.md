@@ -54,7 +54,7 @@ Chosen stack (lock these before coding Phase 1+):
   - [ ] Multi-role users via join table:
     - [ ] Add `user_roles` join table (`userId`, `role`) with unique constraint
     - [ ] Migrate existing `users.role` → `user_roles` and remove single-role column
-    - [ ] Update auth/session to expose `roles[]` and an `activeRole`
+    - [ ] Update auth/session to expose `roles[]` (no active role)
   - [x] Add `CASHIER` role to the Role enum
   - [x] `tables` (name/number, active)
   - [x] `stations` (kitchen, bar, grill, coffee, etc.)
@@ -189,9 +189,7 @@ Chosen stack (lock these before coding Phase 1+):
   - [ ] Cashier closes table and takes payment
 
 ### Role switching (PRD requirement)
-- [ ] If user has both WAITER and CASHIER roles, show "Switch to Cashier" button
-- [ ] Store active role (session cookie or server-side session) and use it for authorization + UI routing
-- [ ] Track which role was active when action was taken (e.g., `createdAsRole`, `paidAsRole`, `lineStatusUpdatedAsRole`)
+- [ ] If user has both WAITER and CASHIER roles, show easy access to cashier UI from waiter UI (no active role; just navigate)
 
 ## Phase 6 — Admin Panel (setup + control)
 
@@ -251,7 +249,10 @@ Chosen stack (lock these before coding Phase 1+):
 
 ## Phase 10 — Polishing (trust + stability)
 
-- [x] PIN login UX for all roles (fast switch user)
+- [ ] PIN login UX for all roles (fast switch user):
+  - [ ] Step 1: select user from cards (no typing)
+  - [ ] Step 2: enter PIN for selected user
+  - [ ] Post-login redirect to the best default route based on roles (or return to requested route if allowed)
 - [ ] Auto-reconnect + resync behavior hardened (including backoff)
 - [ ] Kiosk mode for TVs/tablets (full-screen styling, minimal UI chrome)
 - [ ] Accessibility basics: high contrast, large targets, no tiny text
@@ -268,4 +269,4 @@ Chosen stack (lock these before coding Phase 1+):
 - [ ] Admin can: manage menu/tables/stations/users → set event mode → toggle sold-out → see busyness → export reports
 - [ ] System works on a local WiFi with no internet; all role screens update live
 - [ ] Both event modes work correctly (Mode A: pay first, Mode B: order first)
-- [ ] PRD: Users can hold multiple roles and switch active role without mixing actions
+- [ ] Users can hold multiple roles (e.g., waiter can also cashier) and access both UIs with one login
