@@ -6,6 +6,10 @@
     "db:setup": "pnpm -C apps/server db:generate && pnpm -C apps/server db:migrate && pnpm -C apps/server db:seed",
     "dev": "pnpm -C apps/server dev",
     "build": "pnpm -C apps/web build && pnpm -C apps/server build",
-    "start": "pnpm -C apps/server start"
+    "start": "pnpm -C apps/server start",
+    "electron:start": "pnpm -C apps/electron start",
+    "electron:build": "pnpm -C apps/electron build",
+    "electron:build:mac": "pnpm -C apps/electron build:mac",
+    "electron:build:win": "pnpm -C apps/electron build:win"
   }
 }

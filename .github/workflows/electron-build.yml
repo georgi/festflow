@@ -1,0 +1,92 @@
+name: Build Electron App
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: win
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate Prisma client
+        run: pnpm -C apps/server db:generate
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Build web app
+        run: pnpm -C apps/web build
+
+      - name: Build server
+        run: pnpm -C apps/server build
+
+      - name: Prepare server for packaging
+        run: |
+          cd apps/server
+          mkdir -p bundle
+          cp -r dist bundle/
+          cp -r prisma bundle/
+          # Create a production-ready package.json with runtime dependencies
+          node -e "
+            const pkg = require('./package.json');
+            const prodPkg = {
+              name: pkg.name,
+              type: pkg.type,
+              dependencies: {
+                ...pkg.dependencies,
+                '@prisma/client': pkg.devDependencies['@prisma/client'],
+                'prisma': pkg.devDependencies['prisma']
+              }
+            };
+            require('fs').writeFileSync('./bundle/package.json', JSON.stringify(prodPkg, null, 2));
+          "
+          cd bundle
+          npm install
+          npx prisma generate
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Build Electron app
+        run: pnpm -C apps/electron build:${{ matrix.platform }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: festflow-${{ matrix.platform }}
+          path: |
+            apps/electron/out/*.dmg
+            apps/electron/out/*.zip
+            apps/electron/out/*.exe
+          if-no-files-found: error
