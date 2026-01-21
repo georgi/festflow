@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --clear-screen=false --ignore ../web/node_modules --ignore ../web/dist --ignore ../web/.vite src/index.ts",
+    "dev": "tsx watch --clear-screen=false --ignore '../web/**/*' src/index.ts",
     "build": "tsup src/index.ts --format esm --sourcemap --external vite --external @prisma/client",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

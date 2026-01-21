@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 type SearchParams = {
   next?: string;
@@ -16,9 +19,19 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const nextPath = useMemo(() => {
-    if (typeof search.next === "string" && search.next.startsWith("/")) return search.next;
+    // Ensure nextPath is always a valid string path
+    if (typeof search.next === "string" && search.next.startsWith("/")) {
+      return search.next;
+    }
     return "/";
   }, [search.next]);
+
+  // Extract just the route name from the path (e.g., "/waiter" -> "waiter")
+  const nextRoute = useMemo(() => {
+    if (!nextPath || nextPath === "/") return "/";
+    // Remove leading slash and any query params
+    return nextPath.replace(/^\//, "").split("?")[0] || "/";
+  }, [nextPath]);
 
   async function login() {
     setLoading(true);
@@ -40,7 +53,8 @@ export function LoginPage() {
         throw new Error(`Wrong role. You logged in as ${data.user.role}.`);
       }
 
-      await navigate({ to: nextPath });
+      // Navigate to the next route
+      await navigate({ to: nextRoute });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -50,57 +64,47 @@ export function LoginPage() {
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    await navigate({ to: "/login", search: { next: nextPath, role: search.role } });
+    await navigate({ to: "/login", search: { next: nextRoute, role: search.role } });
   }
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="text-3xl font-semibold">FestFlow</h1>
-      <p className="mt-2 text-slate-300">Login with name + PIN.</p>
-      {search.role ? <p className="mt-1 text-sm text-slate-400">Role: {search.role}</p> : null}
+    <main className="mx-auto flex min-h-[70vh] max-w-md items-center p-6">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>FestFlow</CardTitle>
+          <div className="text-sm text-muted-foreground">Login with name + PIN.</div>
+          {search.role ? <div className="text-xs text-muted-foreground">Role: {search.role}</div> : null}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {error ? (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              {error}
+            </div>
+          ) : null}
 
-      {error ? (
-        <div className="mt-4 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
-          {error}
-        </div>
-      ) : null}
+          <Input
+            placeholder="Name (e.g. Mia)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoCapitalize="words"
+            autoCorrect="off"
+          />
+          <Input
+            placeholder="PIN"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+          />
 
-      <div className="mt-6 space-y-3">
-        <input
-          className="w-full rounded-xl bg-slate-950 px-4 py-3 text-slate-200 placeholder:text-slate-500"
-          placeholder="Name (e.g. Mia)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoCapitalize="words"
-          autoCorrect="off"
-        />
-        <input
-          className="w-full rounded-xl bg-slate-950 px-4 py-3 text-slate-200 placeholder:text-slate-500"
-          placeholder="PIN"
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
-          inputMode="numeric"
-          autoComplete="one-time-code"
-        />
-
-        <button
-          className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-emerald-50 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-200"
-          type="button"
-          disabled={!name.trim() || !pin || loading}
-          onClick={() => void login()}
-        >
-          {loading ? "Logging in…" : "Login"}
-        </button>
-
-        <button
-          className="w-full rounded-xl bg-slate-800 px-4 py-3 font-medium hover:bg-slate-700"
-          type="button"
-          onClick={() => void logout()}
-        >
-          Logout
-        </button>
-      </div>
+          <Button className="w-full" disabled={!name.trim() || !pin || loading} onClick={() => void login()}>
+            {loading ? "Logging in…" : "Login"}
+          </Button>
+          <Button className="w-full" variant="secondary" onClick={() => void logout()}>
+            Logout
+          </Button>
+        </CardContent>
+      </Card>
     </main>
   );
 }
-

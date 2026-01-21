@@ -4,7 +4,7 @@ import { prisma } from "../db";
 import { asyncHandler, sendBadRequest, sendNotFound } from "../lib/http";
 import type { RealtimeEvent } from "../realtime";
 import { requireAuth, requireRole } from "../auth/middleware";
-import { verifyPin } from "../auth/pin";
+import { hashPin, verifyPin } from "../auth/pin";
 import { clearSessionCookie, setSessionCookie } from "../auth/session";
 
 export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => void }) {
@@ -52,6 +52,42 @@ export function createApiRouter(opts: { broadcast: (event: RealtimeEvent) => voi
     asyncHandler(async (_req, res) => {
       clearSessionCookie(res);
       res.json({ ok: true });
+    })
+  );
+
+  // Users (admin only)
+  router.get(
+    "/users",
+    asyncHandler(async (req, res) => {
+      const user = await requireRole(req, res, ["ADMIN"]);
+      if (!user) return;
+      res.json(await prisma.user.findMany({ orderBy: { name: "asc" } }));
+    })
+  );
+
+  router.post(
+    "/users",
+    asyncHandler(async (req, res) => {
+      const user = await requireRole(req, res, ["ADMIN"]);
+      if (!user) return;
+      const body = z
+        .object({
+          name: z.string().min(1),
+          role: z.enum(["WAITER", "KITCHEN", "BAR", "ADMIN"]),
+          pin: z.string().min(3).max(12)
+        })
+        .safeParse(req.body);
+      if (!body.success) return sendBadRequest(res, "Invalid user payload");
+
+      const created = await prisma.user.create({
+        data: {
+          name: body.data.name,
+          role: body.data.role,
+          pinHash: hashPin(body.data.pin)
+        }
+      });
+
+      res.status(201).json(created);
     })
   );
 

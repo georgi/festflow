@@ -49,3 +49,10 @@ export type Bootstrap = {
 };
 
 export type Me = { user: { id: string; name: string; role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN" } };
+
+export type User = {
+  id: string;
+  name: string;
+  role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN";
+  active: boolean;
+};

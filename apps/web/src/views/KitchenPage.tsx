@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { apiGet, apiPatch } from "../api/client";
 import type { Order, OrderLineStatus } from "../api/types";
 import { useRealtime } from "../api/useRealtime";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PageShell } from "@/components/layout/PageShell";
 
 export function KitchenPage() {
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -20,7 +24,7 @@ export function KitchenPage() {
     void refresh();
   }, []);
 
-  useRealtime(() => void refresh());
+  const realtimeStatus = useRealtime(() => void refresh());
 
   async function setLineStatus(lineId: string, status: OrderLineStatus) {
     try {
@@ -32,13 +36,19 @@ export function KitchenPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-4">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-2xl font-semibold">Kitchen board</h2>
-        <div className="text-sm text-slate-400">{orders?.length ?? 0} active</div>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+    <PageShell
+      title="Kitchen"
+      subtitle="Focus on prep. Oldest orders rise to the top."
+      actions={
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+            {realtimeStatus}
+          </Badge>
+          <span>{orders?.length ?? 0} active</span>
+        </div>
+      }
+    >
+      <div className="grid gap-3 md:grid-cols-2">
         {error ? (
           <div className="md:col-span-2 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
             {error}
@@ -46,57 +56,49 @@ export function KitchenPage() {
         ) : null}
 
         {!orders || orders.length === 0 ? (
-          <div className="text-sm text-slate-400">No kitchen items.</div>
+          <div className="text-sm text-muted-foreground">No kitchen items.</div>
         ) : (
           orders.map((order) => (
-            <section key={order.id} className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-              <div className="flex items-start justify-between gap-3">
+            <Card key={order.id}>
+              <CardHeader className="flex-row items-start justify-between space-y-0">
                 <div>
-                  <div className="text-lg font-semibold">
-                    {order.table?.name ?? order.tableId}
-                  </div>
-                  <div className="text-xs text-slate-400">Order {order.id} · Waiter {order.createdByName}</div>
+                  <CardTitle className="text-lg">{order.table?.name ?? order.tableId}</CardTitle>
+                  <div className="text-xs text-muted-foreground">Order {order.id} · Waiter {order.createdByName}</div>
                 </div>
-                <div className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-200">
+                <div className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
                   {Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000))}m
                 </div>
-              </div>
-
-              <ul className="mt-3 space-y-2">
-                {order.lines.map((l) => {
-                  return (
-                    <li key={l.id} className="rounded-xl bg-slate-800/60 p-3">
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {order.lines.map((l) => (
+                    <li key={l.id} className="rounded-xl border bg-muted/40 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="font-medium">
                           {l.qty}× {l.menuItem?.name ?? l.menuItemId}
                         </div>
-                        <div className="text-xs text-slate-400">{l.status.toLowerCase().replace("_", " ")}</div>
+                        <div className="text-xs text-muted-foreground">{l.status.toLowerCase().replace("_", " ")}</div>
                       </div>
-                      {l.note ? <div className="mt-1 text-xs text-slate-400">Note: {l.note}</div> : null}
+                      {l.note ? <div className="mt-1 text-xs text-muted-foreground">Note: {l.note}</div> : null}
                       <div className="mt-3 flex gap-2">
-                        <button
-                          className="rounded-lg bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600"
-                          type="button"
-                          onClick={() => void setLineStatus(l.id, "DONE")}
-                        >
+                        <Button size="sm" variant="secondary" onClick={() => void setLineStatus(l.id, "IN_PROGRESS")}>
+                          In progress
+                        </Button>
+                        <Button size="sm" onClick={() => void setLineStatus(l.id, "DONE")}>
                           Mark done
-                        </button>
-                        <button
-                          className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
-                          type="button"
-                          onClick={() => void setLineStatus(l.id, "OPEN")}
-                        >
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => void setLineStatus(l.id, "OPEN")}>
                           Undo
-                        </button>
+                        </Button>
                       </div>
                     </li>
-                  );
-                })}
-              </ul>
-            </section>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           ))
         )}
       </div>
-    </main>
+    </PageShell>
   );
 }

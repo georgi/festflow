@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost } from "../api/client";
+import { apiGet, apiPatch, apiPost } from "../api/client";
 import type { Bootstrap, Me, MenuCategory, MenuItem, Order } from "../api/types";
 import { useRealtime } from "../api/useRealtime";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { PageShell } from "@/components/layout/PageShell";
+import { Section } from "@/components/layout/Section";
 
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(priceCents / 100);
@@ -43,7 +50,7 @@ export function WaiterPage() {
     void refresh();
   }, []);
 
-  useRealtime(() => void refresh());
+  const realtimeStatus = useRealtime(() => void refresh());
 
   const categories = useMemo(() => {
     if (!bootstrap) return [];
@@ -84,6 +91,8 @@ export function WaiterPage() {
   async function sendOrder() {
     if (!selectedTableId) return;
     if (cart.length === 0) return;
+    const ok = window.confirm("Send this order?");
+    if (!ok) return;
     setSending(true);
     setError(null);
     try {
@@ -101,206 +110,241 @@ export function WaiterPage() {
   }
 
   return (
-    <main className="mx-auto grid max-w-5xl gap-6 p-4 md:grid-cols-2">
-      {error ? (
-        <div className="md:col-span-2 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
-          {error}
-        </div>
-      ) : null}
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Select table</h2>
-          <button
-            className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700"
-            type="button"
-            onClick={() => void refresh()}
-          >
+    <PageShell
+      title="Waiter"
+      subtitle="Take orders fast and keep an eye on progress."
+      actions={
+        <>
+          <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+            {realtimeStatus}
+          </Badge>
+          <Button size="sm" variant="secondary" onClick={() => void refresh()}>
             Refresh
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {(bootstrap?.tables ?? []).filter((t) => t.active).map((t) => (
-            <button
-              key={t.id}
-              className={[
-                "rounded-xl px-4 py-3 text-left",
-                selectedTableId === t.id ? "bg-slate-700" : "bg-slate-800 hover:bg-slate-700"
-              ].join(" ")}
-              type="button"
-              onClick={() => setSelectedTableId(t.id)}
-            >
-              <div className="font-medium">{t.name}</div>
-              <div className="text-xs text-slate-400">{selectedTableId === t.id ? "Selected" : "Tap to start"}</div>
-            </button>
-          ))}
-        </div>
-      </section>
+          </Button>
+        </>
+      }
+    >
+      <Section withDivider={false} title="Tables and orders" subtitle="Select a table and review your active orders.">
+        <div className="grid gap-6 md:grid-cols-2">
+          {error ? (
+            <div className="md:col-span-2 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
+              {error}
+            </div>
+          ) : null}
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">My open orders</h2>
-          <div className="text-xs text-slate-400">{me?.name ?? ""}</div>
-        </div>
-        <div className="mt-3 space-y-3">
-          {myOpenOrders.length === 0 ? (
-            <div className="text-sm text-slate-400">No open orders.</div>
-          ) : (
-            myOpenOrders.map((o) => (
-              <div key={o.id} className="rounded-xl bg-slate-800/60 p-3">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">
-                    {o.table?.name ?? o.tableId}
-                  </div>
-                  <div className="text-xs text-slate-300">{minutesSinceIso(o.createdAt)}m</div>
-                </div>
-                <ul className="mt-2 space-y-1 text-sm text-slate-200">
-                  {o.lines.map((l) => {
-                    return (
-                      <li key={l.id} className="flex items-start justify-between gap-3">
-                        <div>
-                          <span className="font-medium">
-                            {l.qty}× {l.menuItem?.name ?? l.menuItemId}
-                          </span>
-                          {l.note ? (
-                            <div className="text-xs text-slate-400">Note: {l.note}</div>
-                          ) : null}
-                        </div>
-                        <div className="text-xs text-slate-400">{l.status.toLowerCase().replace("_", " ")}</div>
-                      </li>
-                    );
-                  })}
-                </ul>
+          <Card>
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-xl">Select table</CardTitle>
+              <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                tap to start
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {(bootstrap?.tables ?? []).filter((t) => t.active).map((t) => (
+                  <Button
+                    key={t.id}
+                    variant={selectedTableId === t.id ? "default" : "secondary"}
+                    className="h-auto items-start px-4 py-3 text-left"
+                    type="button"
+                    onClick={() => setSelectedTableId(t.id)}
+                  >
+                    <div className="font-medium">{t.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {selectedTableId === t.id ? "Selected" : "Tap to start"}
+                    </div>
+                  </Button>
+                ))}
               </div>
-            ))
-          )}
-        </div>
-      </section>
+            </CardContent>
+          </Card>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4 md:col-span-2">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Menu</h2>
-          <div className="text-sm text-slate-300">
-            Cart total: {formatPrice(cartTotalCents)}
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
-            {categories.map((c: MenuCategory) => (
-              <div key={c.id} className="rounded-xl bg-slate-800/40 p-3">
-                <div className="font-medium">{c.name}</div>
-                <div className="mt-2 grid gap-2">
-                  {(itemsByCategory.get(c.id) ?? []).map((item) => (
-                    <button
-                      key={item.id}
-                      className="rounded-xl bg-slate-800 px-4 py-3 text-left hover:bg-slate-700"
-                      type="button"
-                      onClick={() => {
-                        setCart((prev) => {
-                          const next = [...prev];
-                          const existing = next.find((l) => l.menuItemId === item.id && !l.note);
-                          if (existing) {
-                            existing.qty += 1;
-                            return next;
+          <Card>
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-xl">My open orders</CardTitle>
+              <div className="text-xs text-muted-foreground">{me?.name ?? ""}</div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {myOpenOrders.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No open orders.</div>
+              ) : (
+                myOpenOrders.map((o) => (
+                  <div key={o.id} className="rounded-xl border bg-muted/40 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">
+                        {o.table?.name ?? o.tableId}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{minutesSinceIso(o.createdAt)}m</div>
+                    </div>
+                    <ul className="mt-2 space-y-1 text-sm text-slate-200">
+                      {o.lines.map((l) => (
+                        <li key={l.id} className="flex items-start justify-between gap-3">
+                          <div>
+                            <span className="font-medium">
+                              {l.qty}× {l.menuItem?.name ?? l.menuItemId}
+                            </span>
+                            {l.note ? (
+                              <div className="text-xs text-muted-foreground">Note: {l.note}</div>
+                            ) : null}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{l.status.toLowerCase().replace("_", " ")}</div>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        type="button"
+                        onClick={async () => {
+                          const ok = window.confirm("Cancel this order?");
+                          if (!ok) return;
+                          try {
+                            await apiPatch(`/api/orders/${o.id}/cancel`, { reason: "canceled by waiter" });
+                            await refresh();
+                          } catch (e) {
+                            setError(e instanceof Error ? e.message : String(e));
                           }
-                          next.push({ menuItemId: item.id, qty: 1 });
-                          return next;
-                        });
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-sm text-slate-300">{formatPrice(item.priceCents)}</div>
-                      </div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        Station: {item.station?.name ?? item.stationId}
-                      </div>
-                    </button>
-                  ))}
-                  {(itemsByCategory.get(c.id) ?? []).length === 0 ? (
-                    <div className="text-sm text-slate-500">No items.</div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <aside className="rounded-xl bg-slate-800/40 p-3">
-            <div className="flex items-center justify-between">
-              <div className="font-medium">Cart</div>
-              <button
-                className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
-                type="button"
-                onClick={() => setCart([])}
-                disabled={cart.length === 0}
-              >
-                Clear
-              </button>
-            </div>
-            <div className="mt-2 text-xs text-slate-400">
-              Table: {selectedTableId ? (bootstrap?.tables.find((t) => t.id === selectedTableId)?.name ?? selectedTableId) : "—"}
-            </div>
-
-            <ul className="mt-3 space-y-2">
-              {cart.map((l, idx) => {
-                const item = bootstrap?.items.find((i) => i.id === l.menuItemId);
-                return (
-                  <li key={`${l.menuItemId}-${idx}`} className="rounded-xl bg-slate-900/50 p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="font-medium">{item?.name ?? l.menuItemId}</div>
-                      <div className="text-sm text-slate-300">{item ? formatPrice(item.priceCents * l.qty) : ""}</div>
+                        }}
+                      >
+                        Cancel order
+                      </Button>
                     </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <button
-                        className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700"
-                        type="button"
-                        onClick={() => setCart((prev) => prev.map((x, i) => (i === idx ? { ...x, qty: Math.max(1, x.qty - 1) } : x)))}
-                      >
-                        −
-                      </button>
-                      <div className="min-w-10 text-center text-sm">{l.qty}</div>
-                      <button
-                        className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700"
-                        type="button"
-                        onClick={() => setCart((prev) => prev.map((x, i) => (i === idx ? { ...x, qty: x.qty + 1 } : x)))}
-                      >
-                        +
-                      </button>
-                      <button
-                        className="ml-auto rounded-lg bg-slate-900 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
-                        type="button"
-                        onClick={() => setCart((prev) => prev.filter((_, i) => i !== idx))}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <input
-                      className="mt-2 w-full rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
-                      placeholder="Note (optional)"
-                      value={l.note ?? ""}
-                      onChange={(e) => {
-                        const note = e.target.value;
-                        setCart((prev) => prev.map((x, i) => (i === idx ? { ...x, note: note || undefined } : x)));
-                      }}
-                    />
-                  </li>
-                );
-              })}
-              {cart.length === 0 ? <div className="text-sm text-slate-500">Empty.</div> : null}
-            </ul>
-
-            <button
-              className="mt-4 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-emerald-50 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-200"
-              type="button"
-              disabled={!selectedTableId || cart.length === 0 || sending}
-              onClick={() => void sendOrder()}
-            >
-              {sending ? "Sending…" : "Send order"}
-            </button>
-          </aside>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </section>
-    </main>
+      </Section>
+
+      <Section title="Menu" subtitle="Tap items to build the cart.">
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-xl">Menu</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Cart total: {formatPrice(cartTotalCents)}
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
+              {categories.map((c: MenuCategory) => (
+                <div key={c.id} className="rounded-xl border bg-muted/40 p-3">
+                  <div className="font-medium">{c.name}</div>
+                  <div className="mt-2 grid gap-2">
+                    {(itemsByCategory.get(c.id) ?? []).map((item) => (
+                      <Button
+                        key={item.id}
+                        variant="secondary"
+                        className="h-auto items-start px-4 py-3 text-left"
+                        type="button"
+                        onClick={() => {
+                          setCart((prev) => {
+                            const next = [...prev];
+                            const existing = next.find((l) => l.menuItemId === item.id && !l.note);
+                            if (existing) {
+                              existing.qty += 1;
+                              return next;
+                            }
+                            next.push({ menuItemId: item.id, qty: 1 });
+                            return next;
+                          });
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-sm text-slate-300">{formatPrice(item.priceCents)}</div>
+                        </div>
+                        <div className="mt-1 text-xs text-slate-400">
+                          Station: {item.station?.name ?? item.stationId}
+                        </div>
+                      </Button>
+                    ))}
+                    {(itemsByCategory.get(c.id) ?? []).length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No items.</div>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <aside className="rounded-xl border bg-muted/40 p-3">
+              <div className="flex items-center justify-between">
+                <div className="font-medium">Cart</div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setCart([])}
+                  disabled={cart.length === 0}
+                >
+                  Clear
+                </Button>
+              </div>
+              <div className="mt-2 text-xs text-slate-400">
+                Table: {selectedTableId ? (bootstrap?.tables.find((t) => t.id === selectedTableId)?.name ?? selectedTableId) : "—"}
+              </div>
+
+              <ul className="mt-3 space-y-2">
+                {cart.map((l, idx) => {
+                  const item = bootstrap?.items.find((i) => i.id === l.menuItemId);
+                  return (
+                    <li key={`${l.menuItemId}-${idx}`} className="rounded-xl border bg-background/60 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="font-medium">{item?.name ?? l.menuItemId}</div>
+                        <div className="text-sm text-slate-300">{item ? formatPrice(item.priceCents * l.qty) : ""}</div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          onClick={() => setCart((prev) => prev.map((x, i) => (i === idx ? { ...x, qty: Math.max(1, x.qty - 1) } : x)))}
+                        >
+                          −
+                        </Button>
+                        <div className="min-w-10 text-center text-sm">{l.qty}</div>
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          onClick={() => setCart((prev) => prev.map((x, i) => (i === idx ? { ...x, qty: x.qty + 1 } : x)))}
+                        >
+                          +
+                        </Button>
+                        <Button
+                          className="ml-auto"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setCart((prev) => prev.filter((_, i) => i !== idx))}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <Textarea
+                        className="mt-2"
+                        placeholder="Note (optional)"
+                        value={l.note ?? ""}
+                        onChange={(e) => {
+                          const note = e.target.value;
+                          setCart((prev) => prev.map((x, i) => (i === idx ? { ...x, note: note || undefined } : x)));
+                        }}
+                      />
+                    </li>
+                  );
+                })}
+                {cart.length === 0 ? <div className="text-sm text-slate-500">Empty.</div> : null}
+              </ul>
+
+              <Button
+                className="mt-4 w-full"
+                type="button"
+                disabled={!selectedTableId || cart.length === 0 || sending}
+                onClick={() => void sendOrder()}
+              >
+                {sending ? "Sending…" : "Send order"}
+              </Button>
+            </aside>
+          </CardContent>
+        </Card>
+      </Section>
+    </PageShell>
   );
 }

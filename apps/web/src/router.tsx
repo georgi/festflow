@@ -13,14 +13,14 @@ import { KitchenPage } from "./views/KitchenPage";
 import { LoginPage } from "./views/LoginPage";
 import { WaiterPage } from "./views/WaiterPage";
 
-async function requireRole(role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN", next: string) {
+async function requireRole(role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN", nextPath: string) {
   const res = await fetch("/api/auth/me", { headers: { Accept: "application/json" } });
   if (!res.ok) {
-    throw redirect({ to: "/login", search: { next, role } });
+    throw redirect({ to: "/login", search: { next: nextPath, role } });
   }
   const data = (await res.json()) as { user: { role: string } };
   if (data.user.role !== role) {
-    throw redirect({ to: "/login", search: { next, role } });
+    throw redirect({ to: "/login", search: { next: nextPath, role } });
   }
 }
 

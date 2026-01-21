@@ -1,7 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPatch, apiPost } from "../api/client";
-import type { Bootstrap, MenuCategory, MenuItem, Order, StationType } from "../api/types";
+import type { Bootstrap, MenuCategory, MenuItem, Order, StationType, User } from "../api/types";
 import { useRealtime } from "../api/useRealtime";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { PageShell } from "@/components/layout/PageShell";
+import { Section } from "@/components/layout/Section";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(priceCents / 100);
@@ -10,6 +23,7 @@ function formatPrice(priceCents: number) {
 export function AdminPage() {
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
   const [orders, setOrders] = useState<Order[] | null>(null);
+  const [users, setUsers] = useState<User[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [newTableName, setNewTableName] = useState("");
@@ -21,16 +35,21 @@ export function AdminPage() {
   const [newItemPriceCents, setNewItemPriceCents] = useState("0");
   const [newItemCategoryId, setNewItemCategoryId] = useState<string>("");
   const [newItemStationId, setNewItemStationId] = useState<string>("");
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserRole, setNewUserRole] = useState<User["role"]>("WAITER");
+  const [newUserPin, setNewUserPin] = useState("");
 
   async function refresh() {
     try {
       setError(null);
-      const [b, o] = await Promise.all([
+      const [b, o, u] = await Promise.all([
         apiGet<Bootstrap>("/api/bootstrap"),
-        apiGet<Order[]>("/api/orders?status=OPEN")
+        apiGet<Order[]>("/api/orders?status=OPEN"),
+        apiGet<User[]>("/api/users")
       ]);
       setBootstrap(b);
       setOrders(o);
+      setUsers(u);
       setNewItemCategoryId((prev) => prev || b.categories[0]?.id || "");
       setNewItemStationId((prev) => prev || b.stations[0]?.id || "");
     } catch (e) {
@@ -42,7 +61,7 @@ export function AdminPage() {
     void refresh();
   }, []);
 
-  useRealtime(() => void refresh());
+  const realtimeStatus = useRealtime(() => void refresh());
 
   const openOrders = orders ?? [];
   const openKitchenLines = openOrders.flatMap((o) => o.lines).filter((l) => l.station?.type === "KITCHEN" && l.status !== "DONE" && l.status !== "CANCELED");
@@ -116,129 +135,192 @@ export function AdminPage() {
     }
   }
 
+  async function createUser() {
+    if (!newUserName.trim() || !newUserPin) return;
+    try {
+      await apiPost("/api/users", {
+        name: newUserName.trim(),
+        role: newUserRole,
+        pin: newUserPin
+      });
+      setNewUserName("");
+      setNewUserPin("");
+      setNewUserRole("WAITER");
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   return (
-    <main className="mx-auto max-w-5xl p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Admin</h2>
-        <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button" onClick={() => void refresh()}>
-          Refresh
-        </button>
-      </div>
+    <PageShell
+      title="Admin"
+      subtitle="Setup and live control for your event."
+      actions={
+        <>
+          <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+            {realtimeStatus}
+          </Badge>
+          <Button size="sm" variant="secondary" onClick={() => void refresh()}>
+            Refresh
+          </Button>
+        </>
+      }
+    >
 
       {error ? (
-        <div className="mt-4 rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
+        <div className="rounded-xl border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">
           {error}
         </div>
       ) : null}
 
-      <section className="mt-4 grid gap-3 md:grid-cols-3">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-          <div className="text-sm text-slate-400">Open orders</div>
-          <div className="mt-1 text-3xl font-semibold">{openOrders.length}</div>
+      <Section withDivider={false} title="Live overview" subtitle="Snapshot of current workload.">
+        <div className="grid gap-3 md:grid-cols-3">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Open orders</CardTitle>
+            </CardHeader>
+            <CardContent className="text-3xl font-semibold">{openOrders.length}</CardContent>
+          </Card>
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Kitchen backlog</CardTitle>
+            </CardHeader>
+            <CardContent className="text-3xl font-semibold">{openKitchenLines.length}</CardContent>
+          </Card>
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Bar backlog</CardTitle>
+            </CardHeader>
+            <CardContent className="text-3xl font-semibold">{openBarLines.length}</CardContent>
+          </Card>
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-          <div className="text-sm text-slate-400">Kitchen backlog</div>
-          <div className="mt-1 text-3xl font-semibold">{openKitchenLines.length}</div>
-        </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-          <div className="text-sm text-slate-400">Bar backlog</div>
-          <div className="mt-1 text-3xl font-semibold">{openBarLines.length}</div>
-        </div>
-      </section>
+      </Section>
 
-      <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-          <h3 className="text-lg font-semibold">Stations</h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <input
-              className="flex-1 rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
-              placeholder="Station name"
-              value={newStationName}
-              onChange={(e) => setNewStationName(e.target.value)}
-            />
-            <select
-              className="rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              value={newStationType}
-              onChange={(e) => setNewStationType(e.target.value as StationType)}
-            >
-              <option value="KITCHEN">KITCHEN</option>
-              <option value="BAR">BAR</option>
-              <option value="OTHER">OTHER</option>
-            </select>
-            <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button" onClick={() => void createStation()}>
-              Add
-            </button>
-          </div>
+      <Section title="Setup" subtitle="Stations and tables used during service.">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Stations</CardTitle>
+            <div className="text-xs text-muted-foreground">Create stations and assign them to menu items.</div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <Input
+                className="flex-1"
+                placeholder="Station name"
+                value={newStationName}
+                onChange={(e) => setNewStationName(e.target.value)}
+              />
+              <Select value={newStationType} onValueChange={(value) => setNewStationType(value as StationType)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="KITCHEN">KITCHEN</SelectItem>
+                  <SelectItem value="BAR">BAR</SelectItem>
+                  <SelectItem value="OTHER">OTHER</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="secondary" onClick={() => void createStation()}>
+                Add
+              </Button>
+            </div>
 
           <ul className="mt-3 space-y-2">
             {(bootstrap?.stations ?? []).map((s) => (
-              <li key={s.id} className="rounded-xl bg-slate-800/60 px-3 py-2">
+              <li key={s.id} className="rounded-xl border bg-muted/40 px-3 py-2">
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-medium">{s.name}</div>
-                  <div className="text-xs text-slate-400">{s.type}</div>
+                  <div className="text-xs text-muted-foreground">{s.type}</div>
                 </div>
               </li>
             ))}
           </ul>
-        </section>
+          </CardContent>
+        </Card>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-          <h3 className="text-lg font-semibold">Tables</h3>
-          <div className="mt-3 flex gap-2">
-            <input
-              className="flex-1 rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
-              placeholder="Table name"
-              value={newTableName}
-              onChange={(e) => setNewTableName(e.target.value)}
-            />
-            <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button" onClick={() => void createTable()}>
-              Add
-            </button>
-          </div>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Tables</CardTitle>
+            <div className="text-xs text-muted-foreground">Quickly add or disable tables.</div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Input
+                className="flex-1"
+                placeholder="Table name"
+                value={newTableName}
+                onChange={(e) => setNewTableName(e.target.value)}
+              />
+              <Button variant="secondary" onClick={() => void createTable()}>
+                Add
+              </Button>
+            </div>
 
           <ul className="mt-3 grid grid-cols-2 gap-2">
             {(bootstrap?.tables ?? []).map((t) => (
-              <li key={t.id} className="rounded-xl bg-slate-800/60 px-3 py-2">
-                <div className="font-medium">{t.name}</div>
-                <div className="text-xs text-slate-400">{t.active ? "active" : "disabled"}</div>
+              <li key={t.id} className="rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="font-medium">{t.name}</div>
+                    <div className="text-xs text-muted-foreground">{t.active ? "active" : "disabled"}</div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={async () => {
+                      try {
+                        await apiPatch(`/api/tables/${t.id}`, { active: !t.active });
+                        await refresh();
+                      } catch (e) {
+                        setError(e instanceof Error ? e.message : String(e));
+                      }
+                    }}
+                  >
+                    {t.active ? "Disable" : "Enable"}
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
-        </section>
-      </div>
+          </CardContent>
+        </Card>
+        </div>
+      </Section>
 
-      <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-        <div className="grid gap-4 md:grid-cols-2">
+      <Section title="Menu" subtitle="Categories, items, and station routing.">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Menu</CardTitle>
+            <div className="text-xs text-muted-foreground">Organize categories and items with station routing.</div>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
           <div>
             <h3 className="text-lg font-semibold">Menu categories</h3>
             <div className="mt-3 grid grid-cols-3 gap-2">
-              <input
-                className="col-span-2 rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
+              <Input
+                className="col-span-2"
                 placeholder="Category name"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
               />
-              <input
-                className="rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200"
+              <Input
                 inputMode="numeric"
                 value={newCategorySortOrder}
                 onChange={(e) => setNewCategorySortOrder(e.target.value)}
                 placeholder="Sort"
               />
-              <button
-                className="col-span-3 rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700"
-                type="button"
-                onClick={() => void createCategory()}
-              >
+              <Button className="col-span-3" variant="secondary" onClick={() => void createCategory()}>
                 Add category
-              </button>
+              </Button>
             </div>
             <ul className="mt-3 space-y-2">
               {categories.map((c: MenuCategory) => (
-                <li key={c.id} className="rounded-xl bg-slate-800/60 px-3 py-2">
+                <li key={c.id} className="rounded-xl border bg-muted/40 px-3 py-2">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">{c.name}</div>
-                    <div className="text-xs text-slate-400">sort {c.sortOrder}</div>
+                    <div className="text-xs text-muted-foreground">sort {c.sortOrder}</div>
                   </div>
                 </li>
               ))}
@@ -248,81 +330,76 @@ export function AdminPage() {
           <div>
             <h3 className="text-lg font-semibold">Menu item</h3>
             <div className="mt-3 grid gap-2">
-              <input
-                className="rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
+              <Input
                 placeholder="Item name"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
               />
-              <input
-                className="rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200"
+              <Input
                 inputMode="numeric"
                 value={newItemPriceCents}
                 onChange={(e) => setNewItemPriceCents(e.target.value)}
                 placeholder="Price cents"
               />
               <div className="grid grid-cols-2 gap-2">
-                <select
-                  className="rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200"
-                  value={newItemCategoryId}
-                  onChange={(e) => setNewItemCategoryId(e.target.value)}
-                >
-                  {(bootstrap?.categories ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="rounded-lg bg-slate-950 px-3 py-2 text-sm text-slate-200"
-                  value={newItemStationId}
-                  onChange={(e) => setNewItemStationId(e.target.value)}
-                >
-                  {(bootstrap?.stations ?? []).map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={newItemCategoryId} onValueChange={setNewItemCategoryId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(bootstrap?.categories ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={newItemStationId} onValueChange={setNewItemStationId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Station" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(bootstrap?.stations ?? []).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <button className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" type="button" onClick={() => void createItem()}>
+              <Button variant="secondary" onClick={() => void createItem()}>
                 Add item
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        </CardContent>
+          <CardContent className="grid gap-4 md:grid-cols-2">
           {categories.map((c) => {
             const items = (bootstrap?.items ?? []).filter((i) => i.categoryId === c.id);
             return (
-              <div key={c.id} className="rounded-xl bg-slate-800/40 p-3">
+              <div key={c.id} className="rounded-xl border bg-muted/40 p-3">
                 <div className="font-medium">{c.name}</div>
                 <ul className="mt-2 space-y-2">
                   {items.map((item) => (
-                    <li key={item.id} className="rounded-xl bg-slate-800/60 px-3 py-2">
+                    <li key={item.id} className="rounded-xl border bg-background/60 px-3 py-2">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="font-medium">
                             {item.name}{" "}
                             {item.soldOut ? (
-                              <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-xs text-slate-400">
+                              <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                                 sold out
                               </span>
                             ) : null}
                           </div>
-                          <div className="text-xs text-slate-400">Station: {item.station?.name ?? item.stationId}</div>
+                          <div className="text-xs text-muted-foreground">Station: {item.station?.name ?? item.stationId}</div>
                         </div>
                         <div className="text-sm text-slate-200">{formatPrice(item.priceCents)}</div>
                       </div>
                       <div className="mt-2 flex gap-2">
-                        <button
-                          className="rounded-lg bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600"
-                          type="button"
-                          onClick={() => void toggleSoldOut(item)}
-                        >
+                        <Button size="sm" variant="secondary" onClick={() => void toggleSoldOut(item)}>
                           Toggle sold out
-                        </button>
+                        </Button>
                       </div>
                     </li>
                   ))}
@@ -331,8 +408,61 @@ export function AdminPage() {
               </div>
             );
           })}
-        </div>
-      </section>
-    </main>
+          </CardContent>
+        </Card>
+      </Section>
+
+      <Section title="Users" subtitle="Create role logins with short PINs.">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Users</CardTitle>
+            <div className="text-xs text-muted-foreground">Create role logins with short PINs.</div>
+          </CardHeader>
+          <CardContent>
+          <div className="grid gap-2 md:grid-cols-3">
+            <Input
+              placeholder="Name"
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
+            />
+          <Select value={newUserRole} onValueChange={(value) => setNewUserRole(value as User["role"])}>
+            <SelectTrigger>
+              <SelectValue placeholder="Role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="WAITER">WAITER</SelectItem>
+              <SelectItem value="KITCHEN">KITCHEN</SelectItem>
+              <SelectItem value="BAR">BAR</SelectItem>
+              <SelectItem value="ADMIN">ADMIN</SelectItem>
+            </SelectContent>
+          </Select>
+            <Input
+              placeholder="PIN"
+              value={newUserPin}
+              onChange={(e) => setNewUserPin(e.target.value)}
+              inputMode="numeric"
+            />
+            <Button className="md:col-span-3" variant="secondary" onClick={() => void createUser()}>
+              Add user
+            </Button>
+          </div>
+
+          <ul className="mt-4 grid gap-2 md:grid-cols-2">
+            {(users ?? []).map((u) => (
+              <li key={u.id} className="rounded-xl border bg-muted/40 px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{u.name}</div>
+                    <div className="text-xs text-muted-foreground">{u.role}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{u.active ? "active" : "disabled"}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          </CardContent>
+        </Card>
+      </Section>
+    </PageShell>
   );
 }
