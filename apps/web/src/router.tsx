@@ -9,11 +9,12 @@ import {
 import { RoleBadgeHeader } from "./ui/RoleBadgeHeader";
 import { AdminPage } from "./views/AdminPage";
 import { BarPage } from "./views/BarPage";
+import { CashierPage } from "./views/CashierPage";
 import { KitchenPage } from "./views/KitchenPage";
 import { LoginPage } from "./views/LoginPage";
 import { WaiterPage } from "./views/WaiterPage";
 
-async function requireRole(role: "WAITER" | "KITCHEN" | "BAR" | "ADMIN", nextPath: string) {
+async function requireRole(role: "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN", nextPath: string) {
   const res = await fetch("/api/auth/me", { headers: { Accept: "application/json" } });
   if (!res.ok) {
     throw redirect({ to: "/login", search: { next: nextPath, role } });
@@ -74,6 +75,20 @@ const barRoute = createRoute({
   )
 });
 
+const cashierRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/cashier",
+  beforeLoad: async ({ location }) => {
+    await requireRole("CASHIER", location.pathname);
+  },
+  component: () => (
+    <>
+      <RoleBadgeHeader role="Cashier" />
+      <CashierPage />
+    </>
+  )
+});
+
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
@@ -113,7 +128,10 @@ const indexRoute = createRoute({
         <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/bar">
           Bar
         </Link>
-        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/admin">
+        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/cashier">
+          Cashier
+        </Link>
+        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow col-span-2" to="/admin">
           Admin
         </Link>
       </div>
@@ -127,6 +145,7 @@ const routeTree = rootRoute.addChildren([
   waiterRoute,
   kitchenRoute,
   barRoute,
+  cashierRoute,
   adminRoute
 ]);
 

@@ -19,6 +19,7 @@ Open `http://localhost:3000`.
 - Waiter: `Noah` / `2222`
 - Kitchen: `Kitchen` / `3333`
 - Bar: `Bar` / `4444`
+- Cashier: `Cashier` / `5555`
 - Admin: `Admin` / `0000`
 
 ## Prod

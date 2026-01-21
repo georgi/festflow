@@ -19,7 +19,7 @@ Chosen stack (lock these before coding Phase 1+):
 
 ## Global Non‑Negotiables (apply to every phase)
 
-- [x] Browser-only, single URL; role decides what you see (`/waiter`, `/kitchen`, `/bar`, `/admin`)
+- [x] Browser-only, single URL; role decides what you see (`/waiter`, `/kitchen`, `/bar`, `/cashier`, `/admin`)
 - [x] Works without internet: no external CDNs (fonts, scripts); all assets bundled locally
 - [ ] Reversible actions: cancel orders, undo “done”, restore sold-out items, edit last order
 - [x] Fast, simple UI: big tap targets, standard form controls, minimal steps
@@ -27,7 +27,7 @@ Chosen stack (lock these before coding Phase 1+):
 
 ## Phase 1 — Skeleton (click-through demo)
 
-**Deliverable:** Open all four pages in separate tabs; each looks distinct and shows role clearly; demo data only.
+**Deliverable:** Open all five pages in separate tabs; each looks distinct and shows role clearly; demo data only.
 
 - [x] Scaffold web app (Vite + React + TypeScript + TanStack Router)
 - [x] Scaffold server app (Node + TypeScript) to serve API + WebSockets (and the built web app in production)
@@ -36,6 +36,7 @@ Chosen stack (lock these before coding Phase 1+):
   - [x] `/waiter`
   - [x] `/kitchen`
   - [x] `/bar`
+  - [x] `/cashier`
   - [x] `/admin`
 - [x] Add hardcoded demo data (tables, menu, orders) and render read-only views
 - [x] Add a simple “role badge” header component used across pages
@@ -49,12 +50,15 @@ Chosen stack (lock these before coding Phase 1+):
 - [x] Create SQLite database setup (file path configurable via env)
 - [ ] Define schema (minimum viable):
   - [x] `users` (name, role, pinHash or pinCode for MVP)
+  - [ ] Add `CASHIER` role to the Role enum
   - [x] `tables` (name/number, active)
   - [x] `stations` (kitchen, bar, grill, coffee, etc.)
   - [x] `menu_categories` (name, sortOrder)
   - [x] `menu_items` (name, priceCents, stationId, categoryId, soldOut)
   - [x] `orders` (tableId, createdByUserId, status, createdAt, updatedAt)
+  - [ ] Add payment fields to `orders` (paidAt, paidById, paymentStatus)
   - [x] `order_lines` (orderId, menuItemId, qty, note, stationId, status, createdAt, updatedAt)
+  - [ ] Add `event_settings` table (eventMode: MODE_A | MODE_B)
 - [x] Add seed script for demo data that can be reset between events
 
 ### API (server endpoints)
@@ -136,12 +140,58 @@ Chosen stack (lock these before coding Phase 1+):
 - [ ] Optional “group by product” mode (prep batching)
 - [ ] Dark mode for kitchen/bar screens
 
+## Phase 5b — Cashier UX (payment flow)
+
+**Deliverable:** Cashier can see open tables/orders, view prices, take payment, and close orders/tables.
+
+### Schema changes
+- [x] Add `CASHIER` role to the Role enum in Prisma schema
+- [x] Add payment fields to `Order` model:
+  - [x] `paidAt` (DateTime, nullable)
+  - [x] `paidById` (reference to User who took payment)
+  - [x] `paymentStatus` (UNPAID | PAID)
+- [ ] Add `EventSettings` model for event mode selection:
+  - [ ] `eventMode` (MODE_A: Kassieren→Bestellung | MODE_B: Bestellung→Kassieren)
+
+### Routes + UI
+- [x] Create `/cashier` route with role protection
+- [x] Create `CashierPage.tsx` component
+- [ ] Cashier page features:
+  - [x] List open tables (Mode B) or pending orders (Mode A)
+  - [x] Show order totals with prices
+  - [x] "Mark as Paid" button to close order/table
+  - [ ] View order details before payment
+
+### API endpoints
+- [x] `PATCH /orders/:id/pay` – mark order as paid (CASHIER role)
+- [ ] `GET /cashier/open-orders` – list orders pending payment
+- [ ] `GET /event-settings` – get current event mode
+- [ ] `PATCH /event-settings` – update event mode (ADMIN only)
+
+### Seed data
+- [x] Add demo Cashier user (e.g., "Cashier" / PIN "5555")
+
+### Event Mode Support
+- [ ] Mode A (Kassieren → Bestellung):
+  - [ ] Cashier enters order + takes payment first
+  - [ ] Order only created after payment
+  - [ ] Kitchen/bar only sees paid orders
+- [ ] Mode B (Bestellung → Kassieren):
+  - [ ] Waiter creates order at table first
+  - [ ] Kitchen/bar prepares
+  - [ ] Cashier closes table and takes payment
+
+### Role switching (PRD requirement)
+- [ ] If user has both WAITER and CASHIER roles, show "Switch to Cashier" button
+- [ ] Track which role was active when action was taken
+
 ## Phase 6 — Admin Panel (setup + control)
 
 **Deliverable:** Organizer can set up menu/tables/stations in ~10 minutes; can see busyness.
 
 - [x] Auth gate for `/admin` (PIN login)
 - [x] User management (create waiter users)
+- [ ] User management: support creating cashier users
 - [x] Setup pages:
   - [x] Stations editor (kitchen/bar/grill/coffee)
   - [ ] Tables editor (bulk create, rename)
@@ -205,5 +255,7 @@ Chosen stack (lock these before coding Phase 1+):
 
 - [ ] A waiter can: pick table → pick items → add notes → send → see open orders and statuses
 - [ ] Kitchen/bar can: see only relevant items → sort by waiting time → mark done → undo done
-- [ ] Admin can: manage menu/tables/stations → toggle sold-out → see busyness → export reports
+- [ ] Cashier can: see open tables/orders → view prices → take payment → close order/table
+- [ ] Admin can: manage menu/tables/stations/users → set event mode → toggle sold-out → see busyness → export reports
 - [ ] System works on a local WiFi with no internet; all role screens update live
+- [ ] Both event modes work correctly (Mode A: pay first, Mode B: order first)
