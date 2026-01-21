@@ -21,7 +21,8 @@ Chosen stack (lock these before coding Phase 1+):
 
 - [x] Browser-only, single URL; role decides what you see (`/waiter`, `/kitchen`, `/bar`, `/cashier`, `/admin`)
 - [x] Works without internet: no external CDNs (fonts, scripts); all assets bundled locally
-- [ ] Reversible actions: cancel orders, undo “done”, restore sold-out items, edit last order
+- [x] Reversible actions: cancel orders, undo “done”, restore sold-out items
+- [ ] Reversible actions: edit last order
 - [x] Fast, simple UI: big tap targets, standard form controls, minimal steps
 - [x] Clear status everywhere: “sent / in progress / done / canceled”
 
@@ -49,14 +50,18 @@ Chosen stack (lock these before coding Phase 1+):
 
 - [x] Create SQLite database setup (file path configurable via env)
 - [ ] Define schema (minimum viable):
-  - [x] `users` (name, role, pinHash or pinCode for MVP)
-  - [ ] Add `CASHIER` role to the Role enum
+  - [ ] `users` (name, pinHash or pinCode for MVP)
+  - [ ] Multi-role users via join table:
+    - [ ] Add `user_roles` join table (`userId`, `role`) with unique constraint
+    - [ ] Migrate existing `users.role` → `user_roles` and remove single-role column
+    - [ ] Update auth/session to expose `roles[]` and an `activeRole`
+  - [x] Add `CASHIER` role to the Role enum
   - [x] `tables` (name/number, active)
   - [x] `stations` (kitchen, bar, grill, coffee, etc.)
   - [x] `menu_categories` (name, sortOrder)
   - [x] `menu_items` (name, priceCents, stationId, categoryId, soldOut)
   - [x] `orders` (tableId, createdByUserId, status, createdAt, updatedAt)
-  - [ ] Add payment fields to `orders` (paidAt, paidById, paymentStatus)
+  - [x] Add payment fields to `orders` (paidAt, paidById, paymentStatus)
   - [x] `order_lines` (orderId, menuItemId, qty, note, stationId, status, createdAt, updatedAt)
   - [ ] Add `event_settings` table (eventMode: MODE_A | MODE_B)
 - [x] Add seed script for demo data that can be reset between events
@@ -110,17 +115,18 @@ Chosen stack (lock these before coding Phase 1+):
   - [x] Categories with large buttons
   - [ ] Search by name
   - [x] Sold-out items hidden/disabled clearly
+  - [ ] PRD: waiter cannot see prices anywhere (remove/guard price display on waiter screens)
 - [x] Cart + send flow:
   - [x] Review screen with editable qty + notes
   - [x] “Send order” confirmation (prevents accidental sends)
-  - [ ] Clear success state + haptic-like feedback (visual)
+  - [x] Clear success state + haptic-like feedback (visual)
 - [x] “My open orders”:
   - [x] Filter to waiter’s orders by default
   - [x] Show per-station status (kitchen/bar progress)
   - [x] Estimated waiting time (simple heuristic acceptable for v1)
 - [ ] Error handling:
-  - [ ] Offline/reconnect messaging
-  - [ ] Prevent double-submits
+  - [x] Offline/reconnect messaging
+  - [x] Prevent double-submits
 
 ## Phase 5 — Kitchen / Bar UX (production view)
 
@@ -133,6 +139,7 @@ Chosen stack (lock these before coding Phase 1+):
   - [x] Sort by oldest / waiting time
   - [ ] Highlight priority (oldest, large orders, etc.)
   - [x] Clear table number + time since sent
+  - [ ] PRD: kitchen/bar cannot see tables (replace table number with order/ticket identifier)
 - [x] Actions:
   - [x] Mark line “in progress” (optional) and “done”
   - [x] Undo “done”
@@ -160,7 +167,7 @@ Chosen stack (lock these before coding Phase 1+):
   - [x] List open tables (Mode B) or pending orders (Mode A)
   - [x] Show order totals with prices
   - [x] "Mark as Paid" button to close order/table
-  - [ ] View order details before payment
+  - [x] View order details before payment
 
 ### API endpoints
 - [x] `PATCH /orders/:id/pay` – mark order as paid (CASHIER role)
@@ -183,7 +190,8 @@ Chosen stack (lock these before coding Phase 1+):
 
 ### Role switching (PRD requirement)
 - [ ] If user has both WAITER and CASHIER roles, show "Switch to Cashier" button
-- [ ] Track which role was active when action was taken
+- [ ] Store active role (session cookie or server-side session) and use it for authorization + UI routing
+- [ ] Track which role was active when action was taken (e.g., `createdAsRole`, `paidAsRole`, `lineStatusUpdatedAsRole`)
 
 ## Phase 6 — Admin Panel (setup + control)
 
@@ -191,7 +199,8 @@ Chosen stack (lock these before coding Phase 1+):
 
 - [x] Auth gate for `/admin` (PIN login)
 - [x] User management (create waiter users)
-- [ ] User management: support creating cashier users
+- [ ] User management: support creating cashier users (and multi-role users)
+- [ ] User management: assign multiple roles per user (checkboxes or multi-select)
 - [x] Setup pages:
   - [x] Stations editor (kitchen/bar/grill/coffee)
   - [ ] Tables editor (bulk create, rename)
@@ -247,7 +256,7 @@ Chosen stack (lock these before coding Phase 1+):
 - [ ] Kiosk mode for TVs/tablets (full-screen styling, minimal UI chrome)
 - [ ] Accessibility basics: high contrast, large targets, no tiny text
 - [ ] Operational hardening:
-  - [ ] Simple health page (`/health`)
+  - [x] Simple health page (`/health`)
   - [ ] Minimal logging for debugging without internet
   - [ ] “Export diagnostics” (optional)
 
@@ -259,3 +268,4 @@ Chosen stack (lock these before coding Phase 1+):
 - [ ] Admin can: manage menu/tables/stations/users → set event mode → toggle sold-out → see busyness → export reports
 - [ ] System works on a local WiFi with no internet; all role screens update live
 - [ ] Both event modes work correctly (Mode A: pay first, Mode B: order first)
+- [ ] PRD: Users can hold multiple roles and switch active role without mixing actions
