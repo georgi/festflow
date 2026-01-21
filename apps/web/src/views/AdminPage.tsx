@@ -397,7 +397,7 @@ export function AdminPage() {
                           </div>
                           <div className="text-xs text-muted-foreground">Station: {item.station?.name ?? item.stationId}</div>
                         </div>
-                        <div className="text-sm text-slate-200">{formatPrice(item.priceCents)}</div>
+                        <div className="text-sm text-muted-foreground">{formatPrice(item.priceCents)}</div>
                       </div>
                       <div className="mt-2 flex gap-2">
                         <Button size="sm" variant="secondary" onClick={() => void toggleSoldOut(item)}>
@@ -406,7 +406,7 @@ export function AdminPage() {
                       </div>
                     </li>
                   ))}
-                  {items.length === 0 ? <div className="text-sm text-slate-500">No items.</div> : null}
+                  {items.length === 0 ? <div className="text-sm text-muted-foreground">No items.</div> : null}
                 </ul>
               </div>
             );

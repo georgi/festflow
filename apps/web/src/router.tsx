@@ -100,20 +100,20 @@ const indexRoute = createRoute({
   component: () => (
     <div className="mx-auto max-w-3xl p-6">
       <h1 className="text-3xl font-semibold">FestFlow</h1>
-      <p className="mt-2 text-slate-300">
+      <p className="mt-2 text-muted-foreground">
         Choose a role:
       </p>
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <Link className="rounded-xl bg-slate-800 p-4 hover:bg-slate-700" to="/waiter">
+        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/waiter">
           Waiter
         </Link>
-        <Link className="rounded-xl bg-slate-800 p-4 hover:bg-slate-700" to="/kitchen">
+        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/kitchen">
           Kitchen
         </Link>
-        <Link className="rounded-xl bg-slate-800 p-4 hover:bg-slate-700" to="/bar">
+        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/bar">
           Bar
         </Link>
-        <Link className="rounded-xl bg-slate-800 p-4 hover:bg-slate-700" to="/admin">
+        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/admin">
           Admin
         </Link>
       </div>

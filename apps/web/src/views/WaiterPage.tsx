@@ -181,7 +181,7 @@ export function WaiterPage() {
                 myOpenOrders.map((o) => (
                   <div
                     key={o.id}
-                    className={`rounded-xl border p-3 ${o.status === "DONE" ? "border-green-700 bg-green-950/40" : "bg-muted/40"}`}
+                    className={`rounded-xl border p-3 ${o.status === "DONE" ? "border-success/50 bg-success/10" : "bg-muted/40"}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -189,14 +189,14 @@ export function WaiterPage() {
                           {o.table?.name ?? o.tableId}
                         </span>
                         {o.status === "DONE" ? (
-                          <Badge variant="secondary" className="bg-green-700 text-green-100 text-[10px] uppercase">
+                          <Badge variant="secondary" className="bg-success text-success-foreground text-[10px] uppercase">
                             Ready to serve
                           </Badge>
                         ) : null}
                       </div>
                       <div className="text-xs text-muted-foreground">{minutesSinceIso(o.createdAt)}m</div>
                     </div>
-                    <ul className="mt-2 space-y-1 text-sm text-slate-200">
+                    <ul className="mt-2 space-y-1 text-sm text-foreground">
                       {o.lines.map((l) => (
                         <li key={l.id} className="flex items-start justify-between gap-3">
                           <div>
@@ -275,9 +275,9 @@ export function WaiterPage() {
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-slate-300">{formatPrice(item.priceCents)}</div>
+                          <div className="text-sm text-muted-foreground">{formatPrice(item.priceCents)}</div>
                         </div>
-                        <div className="mt-1 text-xs text-slate-400">
+                        <div className="mt-1 text-xs text-muted-foreground">
                           Station: {item.station?.name ?? item.stationId}
                         </div>
                       </Button>
@@ -302,7 +302,7 @@ export function WaiterPage() {
                   Clear
                 </Button>
               </div>
-              <div className="mt-2 text-xs text-slate-400">
+              <div className="mt-2 text-xs text-muted-foreground">
                 Table: {selectedTableId ? (bootstrap?.tables.find((t) => t.id === selectedTableId)?.name ?? selectedTableId) : "—"}
               </div>
 
@@ -313,7 +313,7 @@ export function WaiterPage() {
                     <li key={`${l.menuItemId}-${idx}`} className="rounded-xl border bg-background/60 p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="font-medium">{item?.name ?? l.menuItemId}</div>
-                        <div className="text-sm text-slate-300">{item ? formatPrice(item.priceCents * l.qty) : ""}</div>
+                        <div className="text-sm text-muted-foreground">{item ? formatPrice(item.priceCents * l.qty) : ""}</div>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
                         <Button
@@ -352,7 +352,7 @@ export function WaiterPage() {
                     </li>
                   );
                 })}
-                {cart.length === 0 ? <div className="text-sm text-slate-500">Empty.</div> : null}
+                {cart.length === 0 ? <div className="text-sm text-muted-foreground">Empty.</div> : null}
               </ul>
 
               {orderSuccess ? (
