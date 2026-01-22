@@ -85,18 +85,19 @@ export function KitchenPage() {
         ) : orders.length === 0 ? (
           <div className="text-sm text-muted-foreground">No kitchen items.</div>
         ) : (
-          orders.map((order, index) => {
+          orders.map((order) => {
             // Calculate priority: oldest orders and large orders get highlighted
             const waitMinutes = Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000));
             const totalItems = order.lines.reduce((sum, l) => sum + l.qty, 0);
             const isPriority = waitMinutes >= 10 || totalItems >= 5;
+            const ticketId = order.id.slice(-6).toUpperCase();
             
             return (
               <Card key={order.id} className={isPriority ? "ring-2 ring-orange-500 ring-offset-2" : ""}>
                 <CardHeader className="flex-row items-start justify-between space-y-0">
                   <div>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      Ticket #{order.id.slice(-6).toUpperCase()}
+                      Ticket #{ticketId}
                       {isPriority && <Badge variant="destructive" className="text-xs">Priority</Badge>}
                     </CardTitle>
                     <div className="text-xs text-muted-foreground">Waiter: {order.createdByName}</div>
