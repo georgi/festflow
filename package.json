@@ -11,5 +11,10 @@
     "electron:build": "pnpm -C apps/electron build",
     "electron:build:mac": "pnpm -C apps/electron build:mac",
     "electron:build:win": "pnpm -C apps/electron build:win"
+  },
+  "dependencies": {
+    "i18next": "^25.8.0",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "react-i18next": "^16.5.3"
   }
 }

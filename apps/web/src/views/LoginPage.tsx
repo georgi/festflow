@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, User } from "lucide-react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import type { LoginUser, Role } from "@/api/types";
 
 const MIN_PIN_LENGTH = 3;
@@ -60,6 +62,7 @@ function canAccessRoute(roles: Role[], route: string): boolean {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as SearchParams;
 
@@ -168,8 +171,11 @@ export function LoginPage() {
       <main className="mx-auto flex min-h-[70vh] max-w-2xl items-center p-6">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>FestFlow</CardTitle>
-            <div className="text-sm text-muted-foreground">Select your account to continue.</div>
+            <div className="flex items-center justify-between">
+              <CardTitle>{t('app.title')}</CardTitle>
+              <LanguageSwitcher />
+            </div>
+            <div className="text-sm text-muted-foreground">{t('login.selectAccount')}</div>
           </CardHeader>
           <CardContent className="space-y-4">
             {error ? (
@@ -180,9 +186,9 @@ export function LoginPage() {
             ) : null}
 
             {fetchingUsers ? (
-              <div className="py-8 text-center text-muted-foreground">Loading users…</div>
+              <div className="py-8 text-center text-muted-foreground">{t('login.loadingUsers')}</div>
             ) : users.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">No users available.</div>
+              <div className="py-8 text-center text-muted-foreground">{t('login.noUsers')}</div>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {users.map((user) => (
@@ -205,7 +211,7 @@ export function LoginPage() {
             )}
 
             <Button className="w-full" variant="secondary" onClick={() => void logout()}>
-              Logout
+              {t('login.logout')}
             </Button>
           </CardContent>
         </Card>
@@ -223,9 +229,9 @@ export function LoginPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <CardTitle>Enter PIN</CardTitle>
+              <CardTitle>{t('login.enterPin')}</CardTitle>
               <div className="text-sm text-muted-foreground">
-                Logging in as <span className="font-medium">{selectedUser?.name}</span>
+                {t('login.loggingInAs')} <span className="font-medium">{selectedUser?.name}</span>
               </div>
             </div>
           </div>
@@ -245,10 +251,10 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pin">PIN</Label>
+            <Label htmlFor="pin">{t('login.pin')}</Label>
             <Input
               id="pin"
-              placeholder="Enter your PIN"
+              placeholder={t('login.enterYourPin')}
               type="password"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
@@ -264,10 +270,10 @@ export function LoginPage() {
           </div>
 
           <Button className="w-full" disabled={pin.length < MIN_PIN_LENGTH || loading} onClick={() => void login()}>
-            {loading ? "Logging in…" : "Login"}
+            {loading ? t('login.loggingIn') : t('login.login')}
           </Button>
           <Button className="w-full" variant="secondary" onClick={goBack}>
-            Back
+            {t('login.back')}
           </Button>
         </CardContent>
       </Card>

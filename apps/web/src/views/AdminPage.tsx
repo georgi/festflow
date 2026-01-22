@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { apiGet, apiPatch, apiPost } from "../api/client";
 import type { Bootstrap, MenuCategory, MenuItem, Order, StationType, User } from "../api/types";
 import { useRealtime } from "../api/useRealtime";
@@ -23,6 +24,7 @@ function formatPrice(priceCents: number) {
 }
 
 export function AdminPage() {
+  const { t } = useTranslation();
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [users, setUsers] = useState<User[] | null>(null);
@@ -156,15 +158,15 @@ export function AdminPage() {
 
   return (
     <PageShell
-      title="Admin"
-      subtitle="Setup and live control for your event."
+      title={t('admin.title')}
+      subtitle={t('admin.subtitle')}
       actions={
         <>
           <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
             {realtimeStatus}
           </Badge>
           <Button size="sm" variant="secondary" onClick={() => void refresh()}>
-            Refresh
+            {t('admin.refresh')}
           </Button>
         </>
       }
@@ -177,41 +179,41 @@ export function AdminPage() {
         </Alert>
       ) : null}
 
-      <Section withDivider={false} title="Live overview" subtitle="Snapshot of current workload.">
+      <Section withDivider={false} title={t('admin.liveOverview')} subtitle={t('admin.liveOverviewSubtitle')}>
         <div className="grid gap-3 md:grid-cols-3">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground">Open orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t('admin.openOrders')}</CardTitle>
             </CardHeader>
             <CardContent className="text-3xl font-semibold">{openOrders.length}</CardContent>
           </Card>
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground">Kitchen backlog</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t('admin.kitchenBacklog')}</CardTitle>
             </CardHeader>
             <CardContent className="text-3xl font-semibold">{openKitchenLines.length}</CardContent>
           </Card>
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground">Bar backlog</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t('admin.barBacklog')}</CardTitle>
             </CardHeader>
             <CardContent className="text-3xl font-semibold">{openBarLines.length}</CardContent>
           </Card>
         </div>
       </Section>
 
-      <Section title="Setup" subtitle="Stations and tables used during service.">
+      <Section title={t('admin.setup')} subtitle={t('admin.setupSubtitle')}>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Stations</CardTitle>
-            <div className="text-xs text-muted-foreground">Create stations and assign them to menu items.</div>
+            <CardTitle>{t('admin.stations')}</CardTitle>
+            <div className="text-xs text-muted-foreground">{t('admin.stationsDescription')}</div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               <Input
                 className="flex-1"
-                placeholder="Station name"
+                placeholder={t('admin.stationName')}
                 value={newStationName}
                 onChange={(e) => setNewStationName(e.target.value)}
               />
@@ -226,7 +228,7 @@ export function AdminPage() {
                 </SelectContent>
               </Select>
               <Button variant="secondary" onClick={() => void createStation()}>
-                Add
+                {t('admin.add')}
               </Button>
             </div>
 
@@ -245,43 +247,43 @@ export function AdminPage() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Tables</CardTitle>
-            <div className="text-xs text-muted-foreground">Quickly add or disable tables.</div>
+            <CardTitle>{t('admin.tables')}</CardTitle>
+            <div className="text-xs text-muted-foreground">{t('admin.tablesDescription')}</div>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
               <Input
                 className="flex-1"
-                placeholder="Table name"
+                placeholder={t('admin.tableName')}
                 value={newTableName}
                 onChange={(e) => setNewTableName(e.target.value)}
               />
               <Button variant="secondary" onClick={() => void createTable()}>
-                Add
+                {t('admin.add')}
               </Button>
             </div>
 
           <ul className="mt-3 grid grid-cols-2 gap-2">
-            {(bootstrap?.tables ?? []).map((t) => (
-              <li key={t.id} className="rounded-xl border bg-muted/40 px-3 py-2">
+            {(bootstrap?.tables ?? []).map((table) => (
+              <li key={table.id} className="rounded-xl border bg-muted/40 px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <div className="font-medium">{t.name}</div>
-                    <div className="text-xs text-muted-foreground">{t.active ? "active" : "disabled"}</div>
+                    <div className="font-medium">{table.name}</div>
+                    <div className="text-xs text-muted-foreground">{table.active ? t('admin.active') : t('admin.disabled')}</div>
                   </div>
                   <Button
                     size="sm"
                     variant="secondary"
                     onClick={async () => {
                       try {
-                        await apiPatch(`/api/tables/${t.id}`, { active: !t.active });
+                        await apiPatch(`/api/tables/${table.id}`, { active: !table.active });
                         await refresh();
                       } catch (e) {
                         setError(e instanceof Error ? e.message : String(e));
                       }
                     }}
                   >
-                    {t.active ? "Disable" : "Enable"}
+                    {table.active ? t('admin.disable') : t('admin.enable')}
                   </Button>
                 </div>
               </li>
@@ -292,19 +294,19 @@ export function AdminPage() {
         </div>
       </Section>
 
-      <Section title="Menu" subtitle="Categories, items, and station routing.">
+      <Section title={t('admin.menu')} subtitle={t('admin.menuSubtitle')}>
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Menu</CardTitle>
-            <div className="text-xs text-muted-foreground">Organize categories and items with station routing.</div>
+            <CardTitle>{t('admin.menu')}</CardTitle>
+            <div className="text-xs text-muted-foreground">{t('admin.menuDescription')}</div>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
           <div>
-            <h3 className="text-lg font-semibold">Menu categories</h3>
+            <h3 className="text-lg font-semibold">{t('admin.menuCategories')}</h3>
             <div className="mt-3 grid grid-cols-3 gap-2">
               <Input
                 className="col-span-2"
-                placeholder="Category name"
+                placeholder={t('admin.categoryName')}
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
               />
@@ -312,10 +314,10 @@ export function AdminPage() {
                 inputMode="numeric"
                 value={newCategorySortOrder}
                 onChange={(e) => setNewCategorySortOrder(e.target.value)}
-                placeholder="Sort"
+                placeholder={t('admin.sort')}
               />
               <Button className="col-span-3" variant="secondary" onClick={() => void createCategory()}>
-                Add category
+                {t('admin.addCategory')}
               </Button>
             </div>
             <ul className="mt-3 space-y-2">
@@ -323,7 +325,7 @@ export function AdminPage() {
                 <li key={c.id} className="rounded-xl border bg-muted/40 px-3 py-2">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">sort {c.sortOrder}</div>
+                    <div className="text-xs text-muted-foreground">{t('admin.sort')} {c.sortOrder}</div>
                   </div>
                 </li>
               ))}
@@ -331,10 +333,10 @@ export function AdminPage() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold">Menu item</h3>
+            <h3 className="text-lg font-semibold">{t('admin.menuItem')}</h3>
             <div className="mt-3 grid gap-2">
               <Input
-                placeholder="Item name"
+                placeholder={t('admin.itemName')}
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
               />
@@ -342,12 +344,12 @@ export function AdminPage() {
                 inputMode="numeric"
                 value={newItemPriceCents}
                 onChange={(e) => setNewItemPriceCents(e.target.value)}
-                placeholder="Price cents"
+                placeholder={t('admin.priceCents')}
               />
               <div className="grid grid-cols-2 gap-2">
                 <Select value={newItemCategoryId} onValueChange={setNewItemCategoryId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Category" />
+                    <SelectValue placeholder={t('admin.category')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(bootstrap?.categories ?? []).map((c) => (
@@ -359,7 +361,7 @@ export function AdminPage() {
                 </Select>
                 <Select value={newItemStationId} onValueChange={setNewItemStationId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Station" />
+                    <SelectValue placeholder={t('admin.station')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(bootstrap?.stations ?? []).map((s) => (
@@ -371,7 +373,7 @@ export function AdminPage() {
                 </Select>
               </div>
               <Button variant="secondary" onClick={() => void createItem()}>
-                Add item
+                {t('admin.addItem')}
               </Button>
             </div>
           </div>
@@ -391,22 +393,22 @@ export function AdminPage() {
                             <span className="font-medium">{item.name}</span>
                             {item.soldOut ? (
                               <Badge variant="secondary" className="text-xs">
-                                Sold out
+                                {t('admin.soldOut')}
                               </Badge>
                             ) : null}
                           </div>
-                          <div className="text-xs text-muted-foreground">Station: {item.station?.name ?? item.stationId}</div>
+                          <div className="text-xs text-muted-foreground">{t('admin.station')}: {item.station?.name ?? item.stationId}</div>
                         </div>
                         <div className="text-sm text-muted-foreground">{formatPrice(item.priceCents)}</div>
                       </div>
                       <div className="mt-2 flex gap-2">
                         <Button size="sm" variant="secondary" onClick={() => void toggleSoldOut(item)}>
-                          Toggle sold out
+                          {t('admin.toggleSoldOut')}
                         </Button>
                       </div>
                     </li>
                   ))}
-                  {items.length === 0 ? <div className="text-sm text-muted-foreground">No items.</div> : null}
+                  {items.length === 0 ? <div className="text-sm text-muted-foreground">{t('admin.noItems')}</div> : null}
                 </ul>
               </div>
             );
@@ -415,22 +417,22 @@ export function AdminPage() {
         </Card>
       </Section>
 
-      <Section title="Users" subtitle="Create role logins with short PINs.">
+      <Section title={t('admin.users')} subtitle={t('admin.usersSubtitle')}>
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Users</CardTitle>
-            <div className="text-xs text-muted-foreground">Create role logins with short PINs.</div>
+            <CardTitle>{t('admin.users')}</CardTitle>
+            <div className="text-xs text-muted-foreground">{t('admin.usersSubtitle')}</div>
           </CardHeader>
           <CardContent>
           <div className="grid gap-3">
             <div className="grid gap-2 md:grid-cols-2">
               <Input
-                placeholder="Name"
+                placeholder={t('admin.name')}
                 value={newUserName}
                 onChange={(e) => setNewUserName(e.target.value)}
               />
               <Input
-                placeholder="PIN"
+                placeholder={t('login.pin')}
                 value={newUserPin}
                 onChange={(e) => setNewUserPin(e.target.value)}
                 inputMode="numeric"
@@ -458,7 +460,7 @@ export function AdminPage() {
               ))}
             </div>
             <Button variant="secondary" onClick={() => void createUser()} disabled={newUserRoles.size === 0}>
-              Add user
+              {t('admin.addUser')}
             </Button>
           </div>
 
@@ -470,7 +472,7 @@ export function AdminPage() {
                     <div className="font-medium">{u.name}</div>
                     <div className="text-xs text-muted-foreground">{u.roles.join(", ")}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{u.active ? "active" : "disabled"}</div>
+                  <div className="text-xs text-muted-foreground">{u.active ? t('admin.active') : t('admin.disabled')}</div>
                 </div>
               </li>
             ))}
