@@ -85,47 +85,58 @@ export function BarPage() {
         ) : orders.length === 0 ? (
           <div className="text-sm text-muted-foreground">No bar items.</div>
         ) : (
-          orders.map((order) => (
-            <Card key={order.id}>
-              <CardHeader className="flex-row items-start justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-lg">{order.table?.name ?? order.tableId}</CardTitle>
-                  <div className="text-xs text-muted-foreground">Order {order.id} · Waiter {order.createdByName}</div>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  {Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000))}m
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {order.lines.map((l) => (
-                    <li key={l.id} className="rounded-xl border bg-muted/40 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="font-medium">
-                          {l.qty}× {l.menuItem?.name ?? l.menuItemId}
+          orders.map((order) => {
+            // Calculate priority: oldest orders and large orders get highlighted
+            const waitMinutes = Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60_000));
+            const totalItems = order.lines.reduce((sum, l) => sum + l.qty, 0);
+            const isPriority = waitMinutes >= 10 || totalItems >= 5;
+            const ticketId = order.id.slice(-6).toUpperCase();
+            
+            return (
+              <Card key={order.id} className={isPriority ? "ring-2 ring-orange-500 ring-offset-2" : ""}>
+                <CardHeader className="flex-row items-start justify-between space-y-0">
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      Ticket #{ticketId}
+                      {isPriority && <Badge variant="destructive" className="text-xs">Priority</Badge>}
+                    </CardTitle>
+                    <div className="text-xs text-muted-foreground">Waiter: {order.createdByName}</div>
+                  </div>
+                  <Badge variant={waitMinutes >= 10 ? "destructive" : "secondary"} className="text-xs">
+                    {waitMinutes}m
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {order.lines.map((l) => (
+                      <li key={l.id} className="rounded-xl border bg-muted/40 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="font-medium">
+                            {l.qty}× {l.menuItem?.name ?? l.menuItemId}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {l.status.toLowerCase().replace("_", " ")}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {l.status.toLowerCase().replace("_", " ")}
-                        </Badge>
-                      </div>
-                      {l.note ? <div className="mt-1 text-xs text-muted-foreground">Note: {l.note}</div> : null}
-                      <div className="mt-3 flex gap-2">
-                        <Button size="sm" variant="secondary" onClick={() => void setLineStatus(l.id, "IN_PROGRESS")}>
-                          In progress
-                        </Button>
-                        <Button size="sm" onClick={() => void setLineStatus(l.id, "DONE")}>
-                          Mark done
-                        </Button>
-                        <Button size="sm" variant="secondary" onClick={() => void setLineStatus(l.id, "OPEN")}>
-                          Undo
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ))
+                        {l.note ? <div className="mt-1 text-xs text-muted-foreground">Note: {l.note}</div> : null}
+                        <div className="mt-3 flex gap-2">
+                          <Button size="sm" variant="secondary" onClick={() => void setLineStatus(l.id, "IN_PROGRESS")}>
+                            In progress
+                          </Button>
+                          <Button size="sm" onClick={() => void setLineStatus(l.id, "DONE")}>
+                            Mark done
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => void setLineStatus(l.id, "OPEN")}>
+                            Undo
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </PageShell>
