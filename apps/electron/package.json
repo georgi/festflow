@@ -31,8 +31,16 @@
         "to": "app/web/dist"
       },
       {
-        "from": "../server/bundle",
-        "to": "app/server"
+        "from": "../server/dist",
+        "to": "app/server/dist"
+      },
+      {
+        "from": "../server/package.json",
+        "to": "app/server/package.json"
+      },
+      {
+        "from": "../server/node_modules",
+        "to": "app/server/node_modules"
       }
     ],
     "asarUnpack": [
