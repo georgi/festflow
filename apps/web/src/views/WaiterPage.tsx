@@ -12,11 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageShell } from "@/components/layout/PageShell";
 import { Section } from "@/components/layout/Section";
-import { AlertCircle, CheckCircle2, Wallet } from "lucide-react";
-
-function formatPrice(priceCents: number) {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(priceCents / 100);
-}
+import { AlertCircle, CheckCircle2, Search, Wallet } from "lucide-react";
 
 function minutesSinceIso(ts: string) {
   const ms = Date.now() - new Date(ts).getTime();
@@ -35,6 +31,7 @@ export function WaiterPage() {
   const [sending, setSending] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [showSendDialog, setShowSendDialog] = useState(false);
+  const [menuSearch, setMenuSearch] = useState("");
 
   async function refresh() {
     try {
@@ -66,9 +63,12 @@ export function WaiterPage() {
   const itemsByCategory = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
     if (!bootstrap) return map;
+    const searchLower = menuSearch.toLowerCase().trim();
     for (const item of bootstrap.items) {
       if (!item.active) continue;
       if (item.soldOut) continue;
+      // Apply search filter if there's a search term
+      if (searchLower && !item.name.toLowerCase().includes(searchLower)) continue;
       const list = map.get(item.categoryId) ?? [];
       list.push(item);
       map.set(item.categoryId, list);
@@ -80,7 +80,7 @@ export function WaiterPage() {
       );
     }
     return map;
-  }, [bootstrap]);
+  }, [bootstrap, menuSearch]);
 
   const myOpenOrders = useMemo(() => {
     if (!orders) return [];
@@ -88,11 +88,11 @@ export function WaiterPage() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [orders]);
 
-  const cartTotalCents = useMemo(() => {
-    if (!bootstrap) return 0;
-    const itemById = new Map(bootstrap.items.map((i) => [i.id, i]));
-    return cart.reduce((sum, l) => sum + (itemById.get(l.menuItemId)?.priceCents ?? 0) * l.qty, 0);
-  }, [bootstrap, cart]);
+  // Selected table name for header display
+  const selectedTableName = useMemo(() => {
+    if (!selectedTableId || !bootstrap) return null;
+    return bootstrap.tables.find((t) => t.id === selectedTableId)?.name ?? null;
+  }, [selectedTableId, bootstrap]);
 
   async function sendOrder() {
     if (!selectedTableId) return;
@@ -121,7 +121,7 @@ export function WaiterPage() {
 
   return (
     <PageShell
-      title="Waiter"
+      title={selectedTableName ? `Waiter · ${selectedTableName}` : "Waiter"}
       subtitle="Take orders fast and keep an eye on progress."
       actions={
         <>
@@ -249,10 +249,16 @@ export function WaiterPage() {
 
       <Section title="Menu" subtitle="Tap items to build the cart.">
         <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardHeader className="flex-row items-center justify-between space-y-0 gap-4">
             <CardTitle className="text-xl">Menu</CardTitle>
-            <div className="text-sm text-muted-foreground">
-              Cart total: {formatPrice(cartTotalCents)}
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Search menu…"
+                value={menuSearch}
+                onChange={(e) => setMenuSearch(e.target.value)}
+              />
             </div>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
@@ -280,10 +286,7 @@ export function WaiterPage() {
                           });
                         }}
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">{formatPrice(item.priceCents)}</div>
-                        </div>
+                        <div className="font-medium">{item.name}</div>
                         <div className="mt-1 text-xs text-muted-foreground">
                           Station: {item.station?.name ?? item.stationId}
                         </div>
@@ -318,10 +321,7 @@ export function WaiterPage() {
                   const item = bootstrap?.items.find((i) => i.id === l.menuItemId);
                   return (
                     <li key={`${l.menuItemId}-${idx}`} className="rounded-xl border bg-background/60 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="font-medium">{item?.name ?? l.menuItemId}</div>
-                        <div className="text-sm text-muted-foreground">{item ? formatPrice(item.priceCents * l.qty) : ""}</div>
-                      </div>
+                      <div className="font-medium">{item?.name ?? l.menuItemId}</div>
                       <div className="mt-2 flex items-center gap-2">
                         <Button
                           size="icon"
