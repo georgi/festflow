@@ -63,7 +63,6 @@
     "noItems": "No items.",
     "users": "Users",
     "usersSubtitle": "Create role logins with short PINs.",
-    "usersDescription": "Create role logins with short PINs.",
     "name": "Name",
     "addUser": "Add user"
   },
@@ -151,6 +150,7 @@
   },
   "common": {
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "switch": "Switch"
   }
 }

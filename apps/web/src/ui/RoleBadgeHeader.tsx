@@ -22,7 +22,7 @@ export function RoleBadgeHeader({ role }: { role: string }) {
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
           <a className="text-sm text-muted-foreground hover:text-foreground" href="/login">
-            Switch
+            {t('common.switch')}
           </a>
           <div className="rounded-full bg-muted px-3 py-1 text-sm font-medium">{t(roleKey)}</div>
         </div>

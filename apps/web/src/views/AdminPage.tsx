@@ -421,7 +421,7 @@ export function AdminPage() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>{t('admin.users')}</CardTitle>
-            <div className="text-xs text-muted-foreground">{t('admin.usersDescription')}</div>
+            <div className="text-xs text-muted-foreground">{t('admin.usersSubtitle')}</div>
           </CardHeader>
           <CardContent>
           <div className="grid gap-3">

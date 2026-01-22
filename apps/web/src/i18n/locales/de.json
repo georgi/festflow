@@ -63,7 +63,6 @@
     "noItems": "Keine Artikel.",
     "users": "Benutzer",
     "usersSubtitle": "Erstellen Sie Rollen-Logins mit kurzen PINs.",
-    "usersDescription": "Erstellen Sie Rollen-Logins mit kurzen PINs.",
     "name": "Name",
     "addUser": "Benutzer hinzufügen"
   },
@@ -151,6 +150,7 @@
   },
   "common": {
     "error": "Fehler",
-    "success": "Erfolg"
+    "success": "Erfolg",
+    "switch": "Wechseln"
   }
 }
