@@ -6,6 +6,7 @@ import {
   redirect,
   Outlet
 } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { RoleBadgeHeader } from "./ui/RoleBadgeHeader";
 import { AdminPage } from "./views/AdminPage";
 import { BarPage } from "./views/BarPage";
@@ -13,6 +14,7 @@ import { CashierPage } from "./views/CashierPage";
 import { KitchenPage } from "./views/KitchenPage";
 import { LoginPage } from "./views/LoginPage";
 import { WaiterPage } from "./views/WaiterPage";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
 
 type Role = "WAITER" | "KITCHEN" | "BAR" | "CASHIER" | "ADMIN";
 
@@ -124,31 +126,37 @@ const loginRoute = createRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: () => (
-    <div className="mx-auto max-w-3xl p-6">
-      <h1 className="text-3xl font-semibold">FestFlow</h1>
-      <p className="mt-2 text-muted-foreground">
-        Choose a role:
-      </p>
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/waiter">
-          Waiter
-        </Link>
-        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/kitchen">
-          Kitchen
-        </Link>
-        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/bar">
-          Bar
-        </Link>
-        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/cashier">
-          Cashier
-        </Link>
-        <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow col-span-2" to="/admin">
-          Admin
-        </Link>
+  component: () => {
+    const { t } = useTranslation();
+    return (
+      <div className="mx-auto max-w-3xl p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-semibold">{t('app.title')}</h1>
+          <LanguageSwitcher />
+        </div>
+        <p className="mt-2 text-muted-foreground">
+          {t('app.chooseRole')}
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/waiter">
+            {t('roles.waiter')}
+          </Link>
+          <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/kitchen">
+            {t('roles.kitchen')}
+          </Link>
+          <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/bar">
+            {t('roles.bar')}
+          </Link>
+          <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow" to="/cashier">
+            {t('roles.cashier')}
+          </Link>
+          <Link className="rounded-xl border border-border bg-card p-4 hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow col-span-2" to="/admin">
+            {t('roles.admin')}
+          </Link>
+        </div>
       </div>
-    </div>
-  )
+    );
+  }
 });
 
 const routeTree = rootRoute.addChildren([
