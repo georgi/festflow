@@ -80,3 +80,11 @@ jobs:
             apps/electron/out/*.exe.blockmap
             apps/electron/out/*.yml
           if-no-files-found: error
+
+      - name: List uploaded files
+        run: |
+          echo "## Build Artifacts for ${{ matrix.platform }} 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The following files were built and uploaded:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          ls -lh apps/electron/out/ >> $GITHUB_STEP_SUMMARY
