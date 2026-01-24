@@ -83,6 +83,7 @@ jobs:
           retention-days: 30
 
       - name: List uploaded files
+        shell: bash
         run: |
           echo "## Build Artifacts for ${{ matrix.platform }} 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
