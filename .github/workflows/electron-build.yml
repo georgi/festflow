@@ -110,6 +110,16 @@ jobs:
           name: festflow-win
           path: artifacts/win
 
+      - name: Check if prerelease
+        id: prerelease
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [[ "$TAG" =~ -(alpha|beta|rc) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -117,5 +127,5 @@ jobs:
             artifacts/mac/*
             artifacts/win/*
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
           generate_release_notes: true
