@@ -75,6 +75,8 @@ jobs:
           name: festflow-${{ matrix.platform }}
           path: |
             apps/electron/out/*.dmg
-            apps/electron/out/*.zip
+            apps/electron/out/*.dmg.blockmap
             apps/electron/out/*.exe
+            apps/electron/out/*.exe.blockmap
+            apps/electron/out/*.yml
           if-no-files-found: error
